@@ -18,11 +18,11 @@ async def on_message(message):
 
 	if message.content.startswith('!hello'):
 		msg = 'Greetings {0.author.mention}'.format(message)
-		await client.send_message(message.channel, msg)
+		await message.channel.send(msg)
 
 	if message.content.startswith('!avalon'):
 		if message.channel in busyChannels:
-			await client.send_message(message.channel, "Channel busy with another activity.")
+			await message.channel.send("Channel busy with another activity.")
 		else:
 			busyChannels.append(message.channel)
 			await message.channel.send("Starting **The Resistance: Avalon - Discord Edition** in `#"+message.channel.name+"`...")
