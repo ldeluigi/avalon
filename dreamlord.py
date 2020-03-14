@@ -6,6 +6,9 @@ import shelve
 from random import shuffle
 from avalon import *
 #from wordgame import *
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 client = discord.Client()
 busyChannels = []
@@ -55,4 +58,4 @@ async def on_ready():
 	await client.change_presence(activity = game)
 
 
-client.run('YOUR TOKEN HERE')
+client.run(os.getenv("SECRET_TOKEN"))
