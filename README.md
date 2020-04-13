@@ -5,9 +5,11 @@
 *Only if you wish to download the source code and host your own copy of Avalon*
 - Python 3.5
 - pip - https://pip.pypa.io/en/stable/installing
-- discordpy - https://github.com/Rapptz/discord.py
-- dotenv - https://pypi.org/project/python-dotenv/
-`python3 -pip install -U discord.py`
+- discordpy - https://github.com/Rapptz/discord.py  
+  `pip install -U discord.py`
+- dotenv - https://pypi.org/project/python-dotenv/  
+`pip install -U python-dotenv`
+
 
 # Rules
 *Information in this section drawn from a combination of the game's manual, Wikipedia and theresistanceonline.com*
