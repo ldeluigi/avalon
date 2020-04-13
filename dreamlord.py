@@ -57,5 +57,15 @@ async def on_ready():
 	print('ID: ' + str(client.user.id))
 	await client.change_presence(activity = game)
 
+def run(token):
+	try:
+		client.loop.run_until_complete(client.start(token))
+	except KeyboardInterrupt:
+		print('Interrupted - Shutting Down')
+		client.loop.run_until_complete(client.change_presence(status=discord.Status.offline, activity=None))
+		client.loop.run_until_complete(client.logout())
+    		# cancel all tasks lingering
+	finally:
+		client.loop.close()
 
-client.run(os.getenv("SECRET_TOKEN"))
+run(os.getenv("SECRET_TOKEN"))
