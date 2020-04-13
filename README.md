@@ -1,7 +1,7 @@
 # The Resistance: Avalon - Discord Edition
 *Discord bot built using discord.py library. Original game by Don Eskridge.*
 
-#Technical Requirements
+# Technical Requirements
 *Only if you wish to download the source code and host your own copy of Avalon*
 - Python 3.5
 - pip - https://pip.pypa.io/en/stable/installing
@@ -52,12 +52,8 @@ Avalon is a game of hidden loyalty. Players are either Loyal Servants of Arthur 
 - `!assassinate` - Used by the Assassin in the event of a Good victory to assassinate a member of the game. This command does not have any input verification and only allows you **one** try. Ensure that you @tag the correct person!
 
 # Coming Soon
-- Oberon.
-- Custom discord version of Lancelot.
+- Oberon
 - Ability to select exactly which roles come into play.
-
-# Known Issues/Limitations
-- When two or more players message the bot at the same time, the bot is only able to process one of the messages.
 
 # Original Rulebook
 The original game rules can be found at http://upload.snakesandlattes.com/rules/r/ResistanceAvalon.pdf
