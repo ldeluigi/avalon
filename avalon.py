@@ -4,7 +4,6 @@ import random
 import linecache
 import re
 import shelve
-import copy
 from random import shuffle, randint
 from text import *
 from datetime import datetime
@@ -108,7 +107,7 @@ async def login(client,message,playerlist,gamestate,rules,roles):
 
 async def night(client,message,playerlist,gamestate,rules,roles,canreject,cantreject):
 	await message.channel.send(nightStr)
-	shuffledlist = copy.deepcopy(playerlist)		#these are the things we need
+	shuffledlist = playerlist[:]				#these are the things we need
 	shuffle(shuffledlist)
 	evillist = []
 	merlinlist = []
@@ -181,7 +180,9 @@ async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names
 	for x in playerlist:
 		mentionstring += x.mention+" "
 	while gamestate[0] == 3:
-		votetrigger = await client.wait_for_message(channel=message.channel)
+		def check(m):
+			return m.channel == message.channel
+		votetrigger = await client.wait_for("message", check=check)
 		if votetrigger.content.startswith("!party") and votetrigger.author == playerlist[gamestate[1]]:
 			await message.channel.send(partyStr)
 			templist = votetrigger.content.split()
@@ -230,7 +231,7 @@ async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,na
 		vc=0
 		rejectcounter=0
 		voteStr="\n**Team Vote Results**:\n"
-		templist = copy.deepcopy(playerlist)
+		templist = playerlist[:]
 		for player in templist:
 			if player == playerlist[gamestate[1]]:
 				templist.remove(player)
