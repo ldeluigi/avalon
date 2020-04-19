@@ -168,6 +168,13 @@ async def night(client,message,playerlist,gamestate,rules,roles,canreject,cantre
 	await message.channel.send(night2Str)
 	gamestate[0] = 3
 
+def mentionToID(a:str):
+	a = a.replace("<","")
+	a = a.replace(">","")
+	a = a.replace("@","")
+	a = a.replace("!","")
+	return a
+
 async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names):
 
 	if len(playerlist) >= 7 and gamestate[2] == 4:
@@ -183,22 +190,17 @@ async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names
 		boardstatestring += x+" "
 
 	await message.channel.send(teamStr.format(playersnamestring,playerlist[gamestate[1]].mention,gamestate[2],rules[gamestate[2]-1],gamestate[6],boardstatestring,rules[gamestate[2]-1]))
-	mentionstring = ""
-	for x in playerlist:
-		mentionstring += x.mention+" "
 	while gamestate[0] == 3:
 		votetrigger = await client.wait_for("message", check=channel_check(message.channel))
 		if votetrigger.content.startswith("!party") and votetrigger.author == playerlist[gamestate[1]]:
 			await message.channel.send(partyStr)
-			templist = votetrigger.content.split()
-			#print(templist)
 			names.clear()
-			k = len(templist)
-			for j in range(0,k):
-				names.append(templist.pop())
 			valid = 1
-			for name in names:
-				if name not in mentionstring and name != "!party":
+			playerlistIDs = list(map(lambda p : p.id, playerlist))
+			#print(playerlistIDs)
+			for user in votetrigger.mentions:
+				names.append(user.mention)
+				if user.id not in playerlistIDs:
 					await message.channel.send(playernotingame.format(name))
 					valid = 0
 					break
@@ -206,7 +208,7 @@ async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names
 
 			if valid == 1:
 				if len(names) == len(set(names)):
-					if len(names)-1 == rules[(gamestate[2]-1)]:
+					if len(names) == rules[(gamestate[2]-1)]:
 						await message.channel.send("Valid request submitted.")
 						gamestate[0] = 4
 					else:
@@ -342,7 +344,7 @@ async def privatevote(client,message,playerlist,gamestate,rules,roles,boardstate
 
 async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,names,canreject,cantreject):
 	def assassincheck(msg):
-			if msg.content.startswith('!assassinate') and msg.author == roles["The Assassin"]:
+			if msg.content.startswith('!assassinate') and msg.author == roles["The Assassin"] and len(msg.mentions)==1:
 				return True
 			elif msg.content.startswith('!stop'):
 				return True
@@ -352,8 +354,8 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 		await message.channel.send("Three quests have been completed successfully.\n\nThe assassin may now `!assassinate` someone. You only have ONE chance to get the name and formatting correct. Make sure you tag the correct target with @!")
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
-			asslist = ass.content.split()
-			if roles["Merlin"].mention == asslist[-1]:
+			killedID = ass.mentions[0].id
+			if roles["Merlin"].id == killedID:
 				await message.channel.send("Merlin has been assassinated!\n\n")
 				await message.channel.send(":smiling_imp: **Evil** Wins :smiling_imp:")
 				for player in canreject:
@@ -382,6 +384,7 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 	gamestate[0] = 0
 
 async def addscore(client, message, user):
+	return
 	score = shelve.open('leaderboard', writeback=True)
 	if user.id in score:
 		current = score[user.id]
