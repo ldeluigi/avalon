@@ -1,13 +1,29 @@
 # The Resistance: Avalon - github.com/cameronleong - 16/07/16 #
-import discord
+
 import random
-import linecache
-import re
 import shelve
 from random import shuffle, randint
-from text import *
 from datetime import datetime
+from enum import Enum
+from collections import namedtuple
+
+import discord
 from discord import DMChannel
+
+from text import *
+
+
+class Phase(Enum):
+	INIT = 0
+	LOGIN = 1
+	NIGHT = 2
+	QUEST = 3
+	TEAMVOTE = 4
+	PRIVATEVOTE = 5
+	GAMEOVER = 6
+
+GameState = namedtuple("GameState", "phase leader quest team_attempts quests_succeeded quests_failed required_fails")
+
 
 def channel_check(channel):
 	def _check(m):
@@ -17,7 +33,7 @@ def add_channel_check(check, channel):
 	def _check(m):
 		return channel_check(channel)(m) and check(m)
 	return _check
-	
+
 async def avalon(client, message):			#main loop
 	#Declarations
 	playerlist = [] 				#list of players in the game
@@ -25,29 +41,23 @@ async def avalon(client, message):			#main loop
 	roles = {} 					#active roles based on the # of players. it can be changed.
 	canreject = []
 	cantreject = []
-	gamestate = [0,0,1,5,0,0,1]
-	gamestate[0] = 0
+	gamestate = GameState(Phase.INIT, 0, 1, 5, 0, 0, 1)
 	boardstate = [":red_circle:",":red_circle:",":red_circle:",":red_circle:",":red_circle:"]
 
-	if gamestate[0] == 0: await login(client,message,playerlist,gamestate,rules,roles)
-	if gamestate[0] == 2: await night(client,message,playerlist,gamestate,rules,roles,canreject,cantreject)
-	#gamestate[1] = randint(0,len(playerlist)-1)	#leadercounter
-	#gamestate[2] = 1				#questcounter
-	#gamestate[3] = 5				#passcounter
-	#gamestate[4] = 0 				#successcount
-	#gamestate[5] = 0 				#failcount #failcounter is 6
+	if gamestate.phase == Phase.INIT: await login(client, message, playerlist, gamestate, rules, roles)
+	if gamestate.phase == Phase.NIGHT: await night(client, message, playerlist, gamestate, rules, roles, canreject, cantreject)
 	names = []
-	while gamestate[0] == 3 or gamestate[0] == 4 or gamestate[0] == 5:
-		if gamestate[0] == 3: await quest(client,message,playerlist,gamestate,rules,roles,boardstate,names)
-		if gamestate[0] == 4: await teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,names)
-		if gamestate[0] == 5: await privatevote(client,message,playerlist,gamestate,rules,roles,boardstate,names,canreject)
-	if gamestate[0] == 6: await gameover(client,message,playerlist,gamestate,rules,roles,boardstate,names,canreject,cantreject)
+	while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE):
+		if gamestate.phase == Phase.QUEST: await quest(client, message, playerlist, gamestate, rules, roles, boardstate, names)
+		if gamestate.phase == Phase.TEAMVOTE: await teamvote(client, message, playerlist, gamestate, rules, roles, boardstate, names)
+		if gamestate.phase == Phase.PRIVATEVOTE: await privatevote(client, message, playerlist, gamestate, rules, roles, boardstate, names, canreject)
+	if gamestate.phase == Phase.GAMEOVER: await gameover(client, message, playerlist, gamestate, rules, roles, boardstate, names, canreject, cantreject)
 
 async def login(client,message,playerlist,gamestate,rules,roles):
 	#Login Phase
-	gamestate[0] = 1
+	gamestate.phase = Phase.LOGIN
 	await message.channel.send(loginStr)
-	while gamestate[0] == 1:
+	while gamestate.phase == Phase.LOGIN:
 		reply = await client.wait_for('message', check=channel_check(message.channel))
 		if reply.content == "!join" and len(playerlist) <= 10:
 			if reply.author not in playerlist:
@@ -106,11 +116,11 @@ async def login(client,message,playerlist,gamestate,rules,roles):
 		if reply.content == "!start" and len(playerlist) >= 5:
 			await loadrules(client,message,rules,roles,playerlist,len(playerlist))
 			random.seed(datetime.now())
-			gamestate[1] = randint(0,len(playerlist)-1)	#leadercounter
-			gamestate[0] = 2
+			gamestate.leader = randint(0,len(playerlist)-1)	#leadercounter
+			gamestate.phase = Phase.NIGHT
 		if reply.content == "!stop":
 			await message.channel.send(stopStr)
-			gamestate[0] = 0
+			gamestate.phase = Phase.INIT
 
 async def night(client,message,playerlist,gamestate,rules,roles,canreject,cantreject):
 	await message.channel.send(nightStr)
@@ -166,7 +176,7 @@ async def night(client,message,playerlist,gamestate,rules,roles,canreject,cantre
 			cantreject.append(roles[key])
 			await roles[key].send(percivalDM.format(roles[key].name,key,toString(percivallist)))
 	await message.channel.send(night2Str)
-	gamestate[0] = 3
+	gamestate.phase = Phase.QUEST
 
 def mentionToID(a:str):
 	a = a.replace("<","")
@@ -177,10 +187,10 @@ def mentionToID(a:str):
 
 async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names):
 
-	if len(playerlist) >= 7 and gamestate[2] == 4:
-		gamestate[6] = 2
+	if len(playerlist) >= 7 and gamestate.quest == 4:
+		gamestate.required_fails = 2
 	else:
-		gamestate[6] = 1
+		gamestate.required_fails = 1
 
 	playersnamestring = "|"
 	for x in playerlist:
@@ -189,10 +199,10 @@ async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names
 	for x in boardstate:
 		boardstatestring += x+" "
 
-	await message.channel.send(teamStr.format(playersnamestring,playerlist[gamestate[1]].mention,gamestate[2],rules[gamestate[2]-1],gamestate[6],boardstatestring,rules[gamestate[2]-1]))
-	while gamestate[0] == 3:
+	await message.channel.send(teamStr.format(playersnamestring,playerlist[gamestate.leader].mention,gamestate.quest,rules[gamestate.quest-1],gamestate.required_fails,boardstatestring,rules[gamestate.quest-1]))
+	while gamestate.phase == Phase.QUEST:
 		votetrigger = await client.wait_for("message", check=channel_check(message.channel))
-		if votetrigger.content.startswith("!party") and votetrigger.author == playerlist[gamestate[1]]:
+		if votetrigger.content.startswith("!party") and votetrigger.author == playerlist[gamestate.leader]:
 			await message.channel.send(partyStr)
 			names.clear()
 			valid = 1
@@ -208,20 +218,20 @@ async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names
 
 			if valid == 1:
 				if len(names) == len(set(names)):
-					if len(names) == rules[(gamestate[2]-1)]:
+					if len(names) == rules[(gamestate.quest-1)]:
 						await message.channel.send("Valid request submitted.")
-						gamestate[0] = 4
+						gamestate.phase = Phase.TEAMVOTE
 					else:
-						await message.channel.send(malformedStr.format(rules[gamestate[2]-1]))
+						await message.channel.send(malformedStr.format(rules[gamestate.quest-1]))
 				else:
-					await message.channel.send(duplicateStr.format(rules[gamestate[2]-1]))
-				#gamestate[0] = 4 #cheatcode
+					await message.channel.send(duplicateStr.format(rules[gamestate.quest-1]))
+				#gamestate.phase = Phase.TEAMVOTE #cheatcode
 		if votetrigger.content.startswith("!stop"):
 			await message.channel.send(stopStr)
-			gamestate[0] = 0
+			gamestate.phase = Phase.INIT
 
 async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,names):
-	await message.channel.send(teamvoteStr.format(gamestate[3]))
+	await message.channel.send(teamvoteStr.format(gamestate.team_attempts))
 	def votecheck(msg):
 		if isinstance(msg.channel, DMChannel):
 			if msg.author in templist:
@@ -232,7 +242,7 @@ async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,na
 			return True
 		return False
 
-	while gamestate[0] == 4:
+	while gamestate.phase == Phase.TEAMVOTE:
 		#wait for votes
 		stop = False
 		vc=0
@@ -240,7 +250,7 @@ async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,na
 		voteStr="\n**Team Vote Results**:\n"
 		templist = playerlist[:]
 		for player in templist:
-			if player == playerlist[gamestate[1]]:
+			if player == playerlist[gamestate.leader]:
 				templist.remove(player)
 		for j in range(0,len(playerlist)-1):
 			vc += 1
@@ -257,33 +267,33 @@ async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,na
 
 		if stop == True:
 			await message.channel.send(stopStr)
-			gamestate[0] = 0
+			gamestate.phase = Phase.INIT
 			break
 
 		#votes have been submitted
-		if gamestate[1] == (len(playerlist)-1):
-			gamestate[1] = 0
+		if gamestate.leader == (len(playerlist)-1):
+			gamestate.leader = 0
 		else:
-			gamestate[1] += 1
+			gamestate.leader += 1
 
 		if rejectcounter >= (len(playerlist) / 2):
-			gamestate[3] -= 1
-			if gamestate[3] == 0:
+			gamestate.team_attempts -= 1
+			if gamestate.team_attempts == 0:
 				voteStr += "\nThe team has been **rejected**. **Evil has won!**"
 				await message.channel.send(voteStr)
-				gamestate[0] = 6 #evil win state
+				gamestate.phase = Phase.GAMEOVER #evil win state
 			else:
 				voteStr += "\nThe team has been **rejected**. Moving leader to the next player..."
 				await message.channel.send(voteStr)
-				gamestate[0] = 3
+				gamestate.phase = Phase.QUEST
 		else:
-			gamestate[3] = 5 #reset passcount
+			gamestate.team_attempts = 5 #reset passcount
 			voteStr += "\nThe team has been **approved**. Entering private vote phase."
 			await message.channel.send(voteStr)
-			gamestate[0] = 5
+			gamestate.phase = Phase.PRIVATEVOTE
 
 async def privatevote(client,message,playerlist,gamestate,rules,roles,boardstate,names,canreject):
-	while gamestate[0] == 5:
+	while gamestate.phase == Phase.PRIVATEVOTE:
 		def privatevotecheck(msg):
 			if isinstance(msg.channel, DMChannel):
 				if msg.author in activeplayers and msg.author in canreject:
@@ -323,24 +333,24 @@ async def privatevote(client,message,playerlist,gamestate,rules,roles,boardstate
 			await message.channel.send(str(pmtrigger.author.name)+" has completed their task.")
 		if stop == True:
 			await message.channel.send(stopStr)
-			gamestate[0] = 0
+			gamestate.phase = Phase.INIT
 			break
 
-		if fails >= (gamestate[6]):
-			gamestate[5] += 1
-			boardstate[gamestate[2]-1] = ":no_entry_sign:"
+		if fails >= (gamestate.required_fails):
+			gamestate.quests_failed += 1
+			boardstate[gamestate.quest-1] = ":no_entry_sign:"
 			await message.channel.send("\nQuest **failed**. `"+str(fails)+"` adventurer(s) failed to complete their task.\n")
 		else:
-			gamestate[4] += 1
-			boardstate[gamestate[2]-1] = ":o:"
+			gamestate.quests_succeeded += 1
+			boardstate[gamestate.quest-1] = ":o:"
 			await message.channel.send("\nQuest **succeeded**. `"+str(fails)+"` adventurer(s) failed to complete their task.\n")
 
-		gamestate[2] += 1
+		gamestate.quest += 1
 
-		if gamestate[4] == 3 or gamestate[5] == 3:
-			gamestate[0] = 6
+		if gamestate.quests_succeeded == 3 or gamestate.quests_failed == 3:
+			gamestate.phase = Phase.GAMEOVER
 		else:
-			gamestate[0] = 3
+			gamestate.phase = Phase.QUEST
 
 async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,names,canreject,cantreject):
 	def assassincheck(msg):
@@ -350,7 +360,7 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 				return True
 			return False
 	await message.channel.send(gameoverStr)
-	if gamestate[4] == 3:
+	if gamestate.quests_succeeded == 3:
 		await message.channel.send("Three quests have been completed successfully.\n\nThe assassin may now `!assassinate` someone. You only have ONE chance to get the name and formatting correct. Make sure you tag the correct target with @!")
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
@@ -366,11 +376,11 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 				for player in cantreject:
 					await addscore(client,message,player)
 
-	elif gamestate[5] == 3:
+	elif gamestate.quests_failed == 3:
 		await message.channel.send(":smiling_imp: **Evil** Wins :smiling_imp: ")
 		for player in canreject:
 			await addscore(client,message,player)
-	elif gamestate[4] != 3 and gamestate[5] != 3:
+	elif gamestate.quests_succeeded != 3 and gamestate.quests_failed != 3:
 		await message.channel.send(":smiling_imp: **Evil** Wins by failure :smiling_imp: ")
 		for player in canreject:
 			await addscore(client,message,player)
@@ -381,7 +391,7 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 	roleStr += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
 	await message.channel.send(roleStr)
 	await message.channel.send(stopStr)
-	gamestate[0] = 0
+	gamestate.phase = Phase.INIT
 
 async def addscore(client, message, user):
 	return
