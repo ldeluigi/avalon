@@ -7,8 +7,17 @@ import shelve
 from random import shuffle, randint
 from text import *
 from datetime import datetime
+from discord import DMChannel
 
-
+def channel_check(channel):
+	def _check(m):
+		return m.channel == channel
+	return _check
+def add_channel_check(check, channel):
+	def _check(m):
+		return channel_check(channel)(m) and check(m)
+	return _check
+	
 async def avalon(client, message):			#main loop
 	#Declarations
 	playerlist = [] 				#list of players in the game
@@ -39,9 +48,7 @@ async def login(client,message,playerlist,gamestate,rules,roles):
 	gamestate[0] = 1
 	await message.channel.send(loginStr)
 	while gamestate[0] == 1:
-		def channel_check(m):
-			return m.channel == message.channel
-		reply = await client.wait_for('message', check=channel_check)
+		reply = await client.wait_for('message', check=channel_check(message.channel))
 		if reply.content == "!join" and len(playerlist) <= 10:
 			if reply.author not in playerlist:
 				await message.channel.send(joinStr.format(reply.author.mention))
@@ -180,9 +187,7 @@ async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names
 	for x in playerlist:
 		mentionstring += x.mention+" "
 	while gamestate[0] == 3:
-		def check(m):
-			return m.channel == message.channel
-		votetrigger = await client.wait_for("message", check=check)
+		votetrigger = await client.wait_for("message", check=channel_check(message.channel))
 		if votetrigger.content.startswith("!party") and votetrigger.author == playerlist[gamestate[1]]:
 			await message.channel.send(partyStr)
 			templist = votetrigger.content.split()
@@ -216,7 +221,7 @@ async def quest(client,message,playerlist,gamestate,rules,roles,boardstate,names
 async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,names):
 	await message.channel.send(teamvoteStr.format(gamestate[3]))
 	def votecheck(msg):
-		if msg.channel.is_private:
+		if isinstance(msg.channel, DMChannel):
 			if msg.author in templist:
 				if msg.content == "!approve" or msg.content == "!reject":
 					templist.remove(msg.author)
@@ -237,7 +242,7 @@ async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,na
 				templist.remove(player)
 		for j in range(0,len(playerlist)-1):
 			vc += 1
-			pmtrigger = await client.wait_for_message(check=votecheck)
+			pmtrigger = await client.wait_for("message", check=votecheck)
 			if pmtrigger.content == "!approve":
 				voteStr += ":black_small_square: "+pmtrigger.author.name+" voted **approve**.\n"
 			elif pmtrigger.content == "!reject":
@@ -278,7 +283,7 @@ async def teamvote(client,message,playerlist,gamestate,rules,roles,boardstate,na
 async def privatevote(client,message,playerlist,gamestate,rules,roles,boardstate,names,canreject):
 	while gamestate[0] == 5:
 		def privatevotecheck(msg):
-			if msg.channel.is_private:
+			if isinstance(msg.channel, DMChannel):
 				if msg.author in activeplayers and msg.author in canreject:
 					if msg.content == "!success" or msg.content == "!fail":
 						activeplayers.remove(msg.author)
@@ -305,7 +310,7 @@ async def privatevote(client,message,playerlist,gamestate,rules,roles,boardstate
 
 		votecount = len(activeplayers)
 		for j in range(0,votecount):
-			pmtrigger = await client.wait_for_message(check=privatevotecheck)
+			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
 				pass
 			elif pmtrigger.content == "!fail":
@@ -345,7 +350,7 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 	await message.channel.send(gameoverStr)
 	if gamestate[4] == 3:
 		await message.channel.send("Three quests have been completed successfully.\n\nThe assassin may now `!assassinate` someone. You only have ONE chance to get the name and formatting correct. Make sure you tag the correct target with @!")
-		ass = await client.wait_for_message(channel=message.channel,check=assassincheck)
+		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
 			asslist = ass.content.split()
 			if roles["Merlin"].mention == asslist[-1]:

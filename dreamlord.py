@@ -4,7 +4,8 @@ import linecache
 import re
 import shelve
 from random import shuffle
-from avalon import *
+from avalon import avalon
+from discord import DMChannel
 #from wordgame import *
 import os
 from dotenv import load_dotenv
@@ -26,7 +27,7 @@ async def on_message(message):
 	if message.content.startswith('!avalon'):
 		if message.channel in busyChannels:
 			await message.channel.send("Channel busy with another activity.")
-		else:
+		elif not isinstance(message.channel, DMChannel):
 			busyChannels.append(message.channel)
 			await message.channel.send("Starting **The Resistance: Avalon - Discord Edition** in `#"+message.channel.name+"`...")
 			await avalon(client, message)
