@@ -5,7 +5,7 @@ import shelve
 from random import shuffle, randint
 from datetime import datetime
 from enum import Enum
-from collections import namedtuple
+from dataclasses import dataclass
 
 import discord
 from discord import DMChannel
@@ -22,7 +22,15 @@ class Phase(Enum):
 	PRIVATEVOTE = 5
 	GAMEOVER = 6
 
-GameState = namedtuple("GameState", "phase leader quest team_attempts quests_succeeded quests_failed required_fails")
+@dataclass
+class GameState:
+	phase: Phase
+	leader: int
+	quest: int
+	team_attempts: int
+	quests_succeeded: int
+	quests_failed: int
+	required_fails: int
 
 
 def channel_check(channel):
