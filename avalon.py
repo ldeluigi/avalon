@@ -6,6 +6,7 @@ from random import shuffle, randint
 from datetime import datetime
 from enum import Enum
 from collections import namedtuple
+from dataclasses import dataclass
 
 import discord
 from discord import DMChannel
@@ -26,7 +27,15 @@ class Phase(Enum):
 	PRIVATEVOTE = 5
 	GAMEOVER = 6
 
-GameState = namedtuple("GameState", "phase leader quest team_attempts quests_succeeded quests_failed required_fails")
+@dataclass
+class GameState:
+	phase: Phase
+	leader: int
+	quest: int
+	team_attempts: int
+	quests_succeeded: int
+	quests_failed: int
+	required_fails: int
 
 Role = namedtuple("Role", "team name")
 
@@ -156,7 +165,8 @@ async def login(client,message,playerlist,gamestate,rules,roles):
 			if roles_list is None:
 				await message.channel.send("Rule Loading Error!")
 				continue
-			roles = {role: "" for role in roles_list}
+			roles += roles_list
+			shuffle(roles)
 			players_str = ", ".join(p.name for p in playerlist)
 			roles_str = "\n".join(":black_small_square: {}".format(r.name) for r in roles_list)
 			evil_count = sum(r.team == Team.EVIL for r in roles)
@@ -171,16 +181,12 @@ async def login(client,message,playerlist,gamestate,rules,roles):
 
 async def night(client,message,playerlist,gamestate,rules,roles,canreject,cantreject):
 	await message.channel.send(nightStr)
-	shuffledlist = playerlist[:]				#these are the things we need
-	shuffle(shuffledlist)
-	evillist = []
-	merlinlist = []
-	percivallist = []
-	for key in roles:					#populate the lists
-		roles[key] = shuffledlist.pop()
-	evillist = [roles[key] for key in roles if key.team == Team.EVIL]
-	merlinlist = [roles[key] for key in roles if key.team == Team.EVIL and key != MORDRED]
-	percivallist = [rokes[key] for key in roles if key in [MERLIN, MORGANA]]
+	evillist = [player for player, role in zip(playerlist, roles)
+			if role.team == Team.EVIL]
+	merlinlist = [player for player, role in zip(playerlist, roles)
+			if role.team == Team.EVIL and role != MORDRED]
+	percivallist = [player for player, role in zip(playerlist, roles)
+			if role in [MERLIN, MORGANA]]
 
 	shuffle(evillist)
 	shuffle(merlinlist)
@@ -192,30 +198,29 @@ async def night(client,message,playerlist,gamestate,rules,roles,canreject,cantre
 			string1 += ":black_small_square: "+x.name+"\n"
 		return string1
 
-	for key in roles:
-		#print(str(roles[key].name)+" is "+str(key))	#Cheat code to reveal all roles for debugging purposes
-		if key in SERVANTS:
-			cantreject.append(roles[key])
-			# await client.send_message(roles[key],loyalDM.format(roles[key].name,key))
-			await roles[key].send(loyalDM.format(roles[key].name,key))
-		if key in MINIONS:
-			canreject.append(roles[key])
-			await roles[key].send(minionDM.format(roles[key].name,key,toString(evillist)))
-		if key == MERLIN:
-			cantreject.append(roles[key])
-			await roles[key].send(merlinDM.format(roles[key].name,key,toString(merlinlist)))
-		if key == ASSASSIN:
-			canreject.append(roles[key])
-			await roles[key].send(assassinDM.format(roles[key].name,key,toString(evillist)))
-		if key == MORDRED:
-			canreject.append(roles[key])
-			await roles[key].send(mordredDM.format(roles[key].name,key,toString(evillist)))
-		if key == MORGANA:
-			canreject.append(roles[key])
-			await roles[key].send(morganaDM.format(roles[key].name,key,toString(evillist)))
-		if key == PERCIVAL:
-			cantreject.append(roles[key])
-			await roles[key].send(percivalDM.format(roles[key].name,key,toString(percivallist)))
+	for player, role in zip(playerlist, roles):
+		#print(str(player.name)+" is "+role.name)	#Cheat code to reveal all roles for debugging purposes
+		if role in SERVANTS:
+			cantreject.append(player)
+			await player.send(loyalDM.format(player.name, key))
+		if role in MINIONS:
+			canreject.append(player)
+			await player.send(minionDM.format(player.name, key, toString(evillist)))
+		if role == MERLIN:
+			cantreject.append(player)
+			await player.send(merlinDM.format(player.name, key, toString(merlinlist)))
+		if role == ASSASSIN:
+			canreject.append(player)
+			await player.send(assassinDM.format(player.name, key, toString(evillist)))
+		if role == MORDRED:
+			canreject.append(player)
+			await player.send(mordredDM.format(player.name, key, toString(evillist)))
+		if role == MORGANA:
+			canreject.append(player)
+			await player.send(morganaDM.format(player.name, key, toString(evillist)))
+		if role == PERCIVAL:
+			cantreject.append(player)
+			await player.send(percivalDM.format(player.name,key,toString(percivallist)))
 	await message.channel.send(night2Str)
 	gamestate.phase = Phase.QUEST
 
@@ -394,8 +399,10 @@ async def privatevote(client,message,playerlist,gamestate,rules,roles,boardstate
 			gamestate.phase = Phase.QUEST
 
 async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,names,canreject,cantreject):
+	assassin = playerlist[roles.index(ASSASSIN)]
+	merlin = playerlist[roles.index(MERLIN)]
 	def assassincheck(msg):
-		if msg.content.startswith('!assassinate') and msg.author == roles[ASSASSIN] and len(msg.mentions)==1:
+		if msg.content.startswith('!assassinate') and msg.author == assassin and len(msg.mentions)==1:
 			return True
 		elif msg.content.startswith('!stop'):
 			return True
@@ -406,7 +413,7 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
 			killedID = ass.mentions[0].id
-			if roles[MERLIN].id == killedID:
+			if merlin.id == killedID:
 				await message.channel.send("Merlin has been assassinated!\n\n")
 				await message.channel.send(":smiling_imp: **Evil** Wins :smiling_imp:")
 				for player in canreject:
@@ -425,12 +432,10 @@ async def gameover(client,message,playerlist,gamestate,rules,roles,boardstate,na
 		await message.channel.send(":smiling_imp: **Evil** Wins by failure :smiling_imp: ")
 		for player in canreject:
 			await addscore(client,message,player)
-	roleStr = "\n"
-	for key in roles:
-		#await client.send_message(message.channel,str(roles[key])+" is "+str(key))
-		roleStr += str(roles[key])+" is **"+str(key.name)+"**\n"
-	roleStr += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
-	await message.channel.send(roleStr)
+	roles_str = "\n".join("{} is **{}**".format(player.name, role.name)
+			for player, role in zip(playerlist, roles))
+	roles_str += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
+	await message.channel.send(roles_str)
 	await message.channel.send(stopStr)
 	gamestate.phase = Phase.INIT
 
