@@ -6,3 +6,6 @@ __pycache__/
 
 # Ignore environment variables
 .env
+
+# Ignore mypy cache
+.mypy_cache

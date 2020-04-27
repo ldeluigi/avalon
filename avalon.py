@@ -54,7 +54,7 @@ class Player:
 @dataclass
 class GameState:
 	phase: Phase = Phase.INIT    # current game phase
-	quests: Optional[List[Quest]] = field(default_factory=list)
+	quests: List[Quest] = field(default_factory=list)
 	players: List[Player] = field(default_factory=list)
 	players_by_duid: Mapping[int, Player] = field(default_factory=dict)
 	leader: int = 0              # index of leader player (0-based)
@@ -243,7 +243,7 @@ async def quest(client, message, gamestate):
 					break
 				party_ids.add(user.id)
 				if user.id not in gamestate.players_by_duid.keys():
-					await message.channel.send(playernotingame.format(name))
+					await message.channel.send(playernotingame.format(user.name))
 					valid = False
 					break
 			if valid:
@@ -279,7 +279,7 @@ async def teamvote(client, message, gamestate):
 		voters = [p.user for p in gamestate.players]
 		num_voters = len(voters)
 		# del voters[leader]   # enable to exclude leader from voting
-		for j in range(num_voters):
+		for _ in range(num_voters):
 			vc += 1
 			pmtrigger = await client.wait_for("message", check=votecheck)
 			if pmtrigger.content == "!approve":
@@ -342,7 +342,7 @@ async def privatevote(client, message, gamestate):
 		await message.channel.send(privatevoteStr.format(namestring))
 
 		votecount = len(activeplayers)
-		for j in range(0,votecount):
+		for _ in range(0,votecount):
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
 				pass
