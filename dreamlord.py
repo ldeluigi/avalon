@@ -13,7 +13,7 @@ load_dotenv()
 
 client = discord.Client()
 busyChannels = []
-game = discord.Game(name="github.com/cameronleong", url="github.com/cameronleong")
+game = discord.Game(name="github.com/ldeluigi/avalon", url="github.com/ldeluigi/avalon")
 
 @client.event
 async def on_message(message):
