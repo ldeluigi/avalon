@@ -133,7 +133,7 @@ async def login(client, message, gamestate):
 	while gamestate.phase == Phase.LOGIN:
 		reply = await client.wait_for('message', check=channel_check(message.channel))
 		if reply.content == "!join" and len(gamestate.players) <= 10:
-			if not any(p.user == message.author for p in gamestate.players):
+			if not any(p.user.id == reply.author.id for p in gamestate.players):
 				await message.channel.send(joinStr.format(reply.author.mention))
 				player = Player(reply.author.name, reply.author)
 				gamestate.players.append(player)
