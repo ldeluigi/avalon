@@ -281,9 +281,11 @@ async def quest(client, message, gamestate):
 				else:
 					await message.channel.send(malformedStr.format(quest.adventurers))
 				#gamestate.phase = Phase.TEAMVOTE #cheatcode
-		if votetrigger.content.startswith("!stop"):
+		elif votetrigger.content.startswith("!stop"):
 			await message.channel.send(stopStr)
 			gamestate.phase = Phase.INIT
+		elif votetrigger.author == gamestate.players[gamestate.leader].user and votetrigger.content.startswith("!party"):
+			await message.channel.send(malformedQuestSel.format(len(gamestate.quests)))
 
 async def teamvote(client, message, gamestate):
 	await message.channel.send(teamvoteStr.format(gamestate.team_attempts))

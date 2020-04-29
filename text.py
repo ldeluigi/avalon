@@ -36,7 +36,7 @@ teamStr = "\n```Team Building Phase Triggered```\n{}\n\n{} is the party leader. 
 
 teamStrQuestSel = "\n```Team Building Phase Triggered```\n{}\n\n{} is the party leader. The leader can be in the team, but is not required to be so.\n\n**Board State: **\n```    Quest #:  {}\nAdventurers:  {}\n      Fails:  {}\n    Outcome:  {}\n```\n\nDiscuss carefully, then propose who shall embark on the quest. To start a vote, the leader must type `!party <quest number> <names>` (Tag the names with '@')."
 
-malformedQuestSel = "Malformed Request. Must indicate quest number between 1 and {}."
+malformedQuestSel = "Malformed Request. Must indicate quest number between 1 and {}, and then tag the party members."
 
 questAlreadyComplete = "Quest {} already complete."
 
