@@ -1,6 +1,7 @@
 # The Resistance: Avalon - github.com/cameronleong - 16/07/16 #
 
 import random
+import re
 import shelve
 from random import shuffle, randint
 from datetime import datetime
@@ -54,6 +55,7 @@ class Player:
 @dataclass
 class GameState:
 	phase: Phase = Phase.INIT    # current game phase
+	quest_selection = True       # whether leader may choose any incomplete quest
 	quests: List[Quest] = field(default_factory=list)
 	players: List[Player] = field(default_factory=list)
 	players_by_duid: Mapping[int, Player] = field(default_factory=dict)
@@ -79,6 +81,10 @@ MORGANA = Role(Team.EVIL, "Morgana")
 MORDRED = Role(Team.EVIL, "Mordred")
 
 BOARD_SYMBOLS = {None: ":red_circle:", Team.GOOD: ":o:", Team.EVIL: ":no_entry_sign:"}
+BOARD_CHARS = {None: " ", Team.GOOD: "O", Team.EVIL: "X"}
+
+RE_PARTY_NAMES = re.compile(r"!party\s+.+")
+RE_PARTY_QUEST_NAMES = re.compile(r"!party\s+(\d+)\s+.+")
 
 
 def channel_check(channel):
@@ -224,15 +230,36 @@ async def quest(client, message, gamestate):
 		playersnamestring += "` "+x.name+" `|"
 	boardstatestring = " ".join(BOARD_SYMBOLS[quest.winning_team] for quest in gamestate.quests)
 
-	quest = gamestate.quests[gamestate.current_quest-1]
-	await message.channel.send(teamStr.format(
-		playersnamestring, gamestate.players[gamestate.leader].user.mention,
-		gamestate.current_quest, quest.adventurers, quest.required_fails,
-		boardstatestring, quest.adventurers))
+	if gamestate.quest_selection:
+		board_num = "  ".join(map(str, range(1, len(gamestate.quests)+1)))
+		board_advs = "  ".join(str(q.adventurers) for q in gamestate.quests)
+		board_fails = "  ".join(str(q.required_fails) if q.required_fails > 1 else " " for q in gamestate.quests)
+		board_result = "  ".join(BOARD_CHARS[q.winning_team] for q in gamestate.quests)
+		await message.channel.send(teamStrQuestSel.format(
+			playersnamestring, gamestate.players[gamestate.leader].user.mention,
+			board_num, board_advs, board_fails, board_result))
+	else:
+		quest = gamestate.quests[gamestate.current_quest-1]
+		await message.channel.send(teamStr.format(
+			playersnamestring, gamestate.players[gamestate.leader].user.mention,
+			gamestate.current_quest, quest.adventurers, quest.required_fails,
+			boardstatestring, quest.adventurers))
 	while gamestate.phase == Phase.QUEST:
 		votetrigger = await client.wait_for("message", check=channel_check(message.channel))
-		if votetrigger.content.startswith("!party") and votetrigger.author == gamestate.players[gamestate.leader].user:
+		party_ptn = RE_PARTY_QUEST_NAMES if gamestate.quest_selection else RE_PARTY_NAMES
+		party_match = party_ptn.fullmatch(votetrigger.content)
+		if party_match and votetrigger.author == gamestate.players[gamestate.leader].user:
 			await message.channel.send(partyStr)
+			if gamestate.quest_selection:
+				quest_num = int(party_match.group(1))
+				if not 1 <= quest_num <= len(gamestate.quests):
+					await message.channel.send(malformedQuestSel.format(len(gamestate.quests)))
+					continue
+				quest = gamestate.quests[quest_num-1]
+				if quest.winning_team is not None:
+					await message.channel.send(questAlreadyComplete.format(quest_num))
+					continue
+				gamestate.current_quest = quest_num
 			gamestate.current_party.clear()
 			party_ids = set()
 			valid = True
@@ -247,7 +274,7 @@ async def quest(client, message, gamestate):
 					valid = False
 					break
 			if valid:
-				if len(party_ids) == gamestate.quests[(gamestate.current_quest-1)].adventurers:
+				if len(party_ids) == quest.adventurers:
 					await message.channel.send("Valid request submitted.")
 					gamestate.current_party = [gamestate.players_by_duid[i] for i in party_ids]
 					gamestate.phase = Phase.TEAMVOTE
@@ -365,7 +392,8 @@ async def privatevote(client, message, gamestate):
 			quest.winning_team = Team.GOOD
 			await message.channel.send("\nQuest **succeeded**. `"+str(fails)+"` adventurer(s) failed to complete their task.\n")
 
-		gamestate.current_quest += 1
+		if not gamestate.quest_selection:
+			gamestate.current_quest += 1
 
 		if (gamestate.succeeded_quests == 3 or gamestate.failed_quests == 3):
 			gamestate.phase = Phase.GAMEOVER
