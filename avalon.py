@@ -140,6 +140,7 @@ async def login(client, message, gamestate):
 		reply = await client.wait_for('message', check=channel_check(message.channel))
 		if reply.content == "!join" and len(gamestate.players) <= 10:
 			if not any(p.user.id == reply.author.id for p in gamestate.players):
+				await confirm(reply)
 				await message.channel.send(joinStr.format(reply.author.mention))
 				player = Player(reply.author.name, reply.author)
 				gamestate.players.append(player)
@@ -153,15 +154,19 @@ async def login(client, message, gamestate):
 					gamestate.players.append(bot)
 				"""
 			else:
+				await deny(reply)
 				await message.channel.send(alreadyJoinedStr.format(reply.author.mention))
 		if reply.content == "!join" and len(gamestate.players) > 10:
+			await deny(reply)
 			await message.channel.send(gameFullStr)
 		if reply.content == "!start" and len(gamestate.players) < 5:
 			## TEST DATA ##
 			#bot1 = Player("Bot 1", reply.author)
 			#gamestate.players.append(bot1)
+			await deny(reply)
 			await message.channel.send(notEnoughPlayers)
 		if (reply.content == "!start" and len(gamestate.players) >= 5) or reply.content == "!teststart":
+			await confirm(reply)
 			gamestate.quests, roles_list = setup_game(len(gamestate.players))
 			if roles_list is None:
 				await message.channel.send("Rule Loading Error!")
@@ -178,6 +183,7 @@ async def login(client, message, gamestate):
 			gamestate.leader = randint(0,len(gamestate.players)-1)	#leadercounter
 			gamestate.phase = Phase.NIGHT
 		if reply.content == "!stop":
+			await confirm(reply)
 			await message.channel.send(stopStr)
 			gamestate.phase = Phase.INIT
 
@@ -253,10 +259,12 @@ async def quest(client, message, gamestate):
 			if gamestate.quest_selection:
 				quest_num = int(party_match.group(1))
 				if not 1 <= quest_num <= len(gamestate.quests):
+					await error(votetrigger)
 					await message.channel.send(malformedQuestSel.format(len(gamestate.quests)))
 					continue
 				quest = gamestate.quests[quest_num-1]
 				if quest.winning_team is not None:
+					await deny(votetrigger)
 					await message.channel.send(questAlreadyComplete.format(quest_num))
 					continue
 				gamestate.current_quest = quest_num
@@ -275,16 +283,20 @@ async def quest(client, message, gamestate):
 					break
 			if valid:
 				if len(party_ids) == quest.adventurers:
+					await confirm(votetrigger)
 					await message.channel.send("Valid request submitted.")
 					gamestate.current_party = [gamestate.players_by_duid[i] for i in party_ids]
 					gamestate.phase = Phase.TEAMVOTE
 				else:
+					await error(votetrigger)
 					await message.channel.send(malformedStr.format(quest.adventurers))
 				#gamestate.phase = Phase.TEAMVOTE #cheatcode
 		elif votetrigger.content.startswith("!stop"):
+			await confirm(votetrigger)
 			await message.channel.send(stopStr)
 			gamestate.phase = Phase.INIT
 		elif votetrigger.author == gamestate.players[gamestate.leader].user and votetrigger.content.startswith("!party"):
+			await error(votetrigger)
 			await message.channel.send(malformedQuestSel.format(len(gamestate.quests)))
 
 async def teamvote(client, message, gamestate):
@@ -312,11 +324,14 @@ async def teamvote(client, message, gamestate):
 			vc += 1
 			pmtrigger = await client.wait_for("message", check=votecheck)
 			if pmtrigger.content == "!approve":
+				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "+pmtrigger.author.name+" voted **approve**.\n"
 			elif pmtrigger.content == "!reject":
+				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "+pmtrigger.author.name+" voted **reject**.\n"
 				rejectcounter += 1
 			if pmtrigger.content == "!stop":
+				await confirm(pmtrigger)
 				stop = True
 				break
 			await message.channel.send(pmtrigger.author.mention+" has submitted their vote ("+str(vc)+"/"+str(num_voters)+")")
@@ -374,10 +389,13 @@ async def privatevote(client, message, gamestate):
 		for _ in range(0,votecount):
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
+				await confirm(pmtrigger)
 				pass
 			elif pmtrigger.content == "!fail":
+				await confirm(pmtrigger)
 				fails += 1
 			if pmtrigger.content == "!stop":
+				await confirm(pmtrigger)
 				stop = True
 				break
 			await message.channel.send(str(pmtrigger.author.name)+" has completed their task.")
@@ -416,6 +434,7 @@ async def gameover(client, message, gamestate):
 		await message.channel.send("Three quests have been completed successfully.\n\nThe assassin may now `!assassinate` someone. You only have ONE chance to get the name and formatting correct. Make sure you tag the correct target with @!")
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
+			await confirm(ass)
 			killedID = ass.mentions[0].id
 			if merlin.id == killedID:
 				await message.channel.send("Merlin has been assassinated!\n\n")
@@ -469,3 +488,10 @@ async def scoreboard(client,message):
 			counter = counter + 1
 	await message.channel.send(scoreStr)
 	score.close()
+
+async def confirm(message):
+	await message.add_reaction("✅")
+async def deny(message):
+	await message.add_reaction("⛔")
+async def error(message):
+	await message.add_reaction("❌")

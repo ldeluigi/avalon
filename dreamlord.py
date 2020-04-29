@@ -4,7 +4,7 @@ import linecache
 import re
 import shelve
 from random import shuffle
-from avalon import avalon
+from avalon import avalon, confirm
 from discord import DMChannel
 #from wordgame import *
 import os
@@ -21,6 +21,7 @@ async def on_message(message):
 		return
 
 	if message.content.startswith('!hello'):
+		await confirm(message)
 		msg = 'Greetings {0.author.mention}'.format(message)
 		await message.channel.send(msg)
 
@@ -28,6 +29,7 @@ async def on_message(message):
 		if message.channel in busyChannels:
 			await message.channel.send("Channel busy with another activity.")
 		elif not isinstance(message.channel, DMChannel):
+			await confirm(message)
 			busyChannels.append(message.channel)
 			await message.channel.send("Starting **The Resistance: Avalon - Discord Edition** in `#"+message.channel.name+"`...")
 			await avalon(client, message)
@@ -48,6 +50,7 @@ async def on_message(message):
 
 	if message.content.startswith('!help'):
 		# message.channel.send()
+		await confirm(message)
 		await message.author.send('Please visit https://cameronleong.github.io/avalon to find out more.')
 
 
