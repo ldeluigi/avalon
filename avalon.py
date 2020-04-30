@@ -79,6 +79,7 @@ PERCIVAL = Role(Team.GOOD, "Percival")
 ASSASSIN = Role(Team.EVIL, "The Assassin")
 MORGANA = Role(Team.EVIL, "Morgana")
 MORDRED = Role(Team.EVIL, "Mordred")
+OBERON = Role(Team.EVIL, "Oberon")
 
 BOARD_SYMBOLS = {None: ":red_circle:", Team.GOOD: ":o:", Team.EVIL: ":no_entry_sign:"}
 BOARD_CHARS = {None: " ", Team.GOOD: "O", Team.EVIL: "X"}
@@ -190,7 +191,7 @@ async def login(client, message, gamestate):
 async def night(client, message, gamestate):
 	await message.channel.send(nightStr)
 	# evil players seen by each other
-	evillist = [p for p in gamestate.players if p.role.is_evil]
+	evillist = [p for p in gamestate.players if p.role.is_evil and p.role != OBERON]
 	# evil players seen by Merlin (exclude Mordred)
 	merlinlist = [p for p in gamestate.players if p.role.is_evil and p.role != MORDRED]
 	# players seen by Percival
@@ -219,6 +220,8 @@ async def night(client, message, gamestate):
 			await player.user.send(morganaDM.format(player.name, player.role.name, toString(evillist)))
 		if player.role == PERCIVAL:
 			await player.user.send(percivalDM.format(player.name, player.role.name, toString(percivallist)))
+		if player.role == OBERON:
+			await player.user.send(oberonDM.format(player.name, player.role.name))
 	await message.channel.send(night2Str)
 	gamestate.phase = Phase.QUEST
 
