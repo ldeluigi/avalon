@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Tuple
 from enum import Enum
 from PIL import Image
-#from avalon import GameState
+from enums import Team
 
 IMAGE_DIR = "img"
 
@@ -60,11 +60,19 @@ class Skin:
         elif len(gamestate.players) == 9:
             path = self.board.p9.path
         boardIm: Image = Image.open(self.get_image(path))
-        attemptIm = Image.open(self.get_image(self.reject_mark))
         circleWidth = int(boardIm.width / 10)
-        attemptIm = attemptIm.resize((circleWidth, circleWidth))
+        attemptIm = Image.open(self.get_image(self.reject_mark)).resize((circleWidth, circleWidth))
         left_times = 5 - gamestate.team_attempts
-        boardIm.alpha_composite(attemptIm, dest=(int(boardIm.width / 16 + left_times * (boardIm.width / 27 + circleWidth)), int(boardIm.height * 9.4 / 12)))#(90 + 245 * (5 - gamestate.team_attempts), 995))
+        boardIm.alpha_composite(attemptIm, dest=(int(boardIm.width / 16 + left_times * (boardIm.width / 27 + circleWidth)), int(boardIm.height * 9.4 / 12)))
+        circleWidth = int(boardIm.width / 6.3)
+        successIm = Image.open(self.get_image(self.success_mark)).resize((circleWidth, circleWidth))
+        failIm = Image.open(self.get_image(self.fail_mark)).resize((circleWidth, circleWidth))
+        for quest, index in zip(gamestate.quests, range(0, len(gamestate.quests))):
+            pos = (int(boardIm.width / 26 + index * (boardIm.width / 34 + circleWidth)), int(boardIm.height / 2.47))
+            if (quest.winning_team is Team.GOOD):
+                boardIm.alpha_composite(successIm, dest=pos)
+            if (quest.winning_team is Team.EVIL):
+                boardIm.alpha_composite(failIm, dest=pos)
         arr = io.BytesIO()
         boardIm.save(arr, format='PNG')
         arr.seek(0)

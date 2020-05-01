@@ -5,7 +5,7 @@ import re
 import shelve
 from random import shuffle, randint
 from datetime import datetime
-from enum import Enum
+from enums import Team, Phase
 from dataclasses import dataclass, field
 from typing import List, Mapping, Optional
 from skins import Skins, Skin
@@ -14,20 +14,6 @@ import discord
 from discord import DMChannel
 
 from text import *
-
-
-class Team(Enum):
-	GOOD = 0   # loyal servants of Arthur, including Merlin and Percival
-	EVIL = 1   # minions of Mordred, including Assassin, Morgana, Mordred
-
-class Phase(Enum):
-	INIT = 0          # initial state (unstable?)
-	LOGIN = 1         # players are joining
-	NIGHT = 2         # roles are disclosed to players (unstable)
-	QUEST = 3         # team must be selected by leader
-	TEAMVOTE = 4      # team must be voted by all players
-	PRIVATEVOTE = 5   # quest is ongoing, adventurers must pick success or fail
-	GAMEOVER = 6      # game is over (unstable)
 
 @dataclass(frozen=True)
 class Role:
