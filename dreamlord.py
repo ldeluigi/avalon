@@ -6,6 +6,7 @@ import shelve
 from random import shuffle
 from avalon import avalon, confirm
 from discord import DMChannel
+from skins import Skins
 #from wordgame import *
 import os
 from dotenv import load_dotenv

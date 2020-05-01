@@ -8,6 +8,7 @@ from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Mapping, Optional
+from skins import Skins, Skin
 
 import discord
 from discord import DMChannel
@@ -63,6 +64,7 @@ class GameState:
 	current_quest: int = 1       # number of current quest (1-based)
 	team_attempts: int = 5       # remaining attempts to form team (incl. current one)
 	current_party: List[Player] = field(default_factory=list)
+	skin: Skin = Skins["AVALON"]
 	@property
 	def succeeded_quests(self):
 		return sum(quest.winning_team is Team.GOOD for quest in self.quests)
@@ -125,6 +127,7 @@ def setup_game(num_players):
 
 async def avalon(client, message):			#main loop
 	gamestate = GameState()
+	await gamestate.skin.send_image(gamestate.skin.logo, message.channel)
 	if gamestate.phase == Phase.INIT: await login(client, message, gamestate)
 	if gamestate.phase == Phase.NIGHT: await night(client, message, gamestate)
 	while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE):
@@ -208,20 +211,29 @@ async def night(client, message, gamestate):
 		#print(str(player.name)+" is "+role.name)	#Cheat code to reveal all roles for debugging purposes
 		if player.role in SERVANTS:
 			await player.user.send(loyalDM.format(player.name, player.role.name))
+			await gamestate.skin.send_image(random.choice(gamestate.skin.loyal_servants), player.user)
+			#await send_image(gamestate.skin, "lo")
 		if player.role in MINIONS:
 			await player.user.send(minionDM.format(player.name, player.role.name, toString(evillist)))
+			await gamestate.skin.send_image(random.choice(gamestate.skin.evil_servants), player.user)
 		if player.role == MERLIN:
 			await player.user.send(merlinDM.format(player.name, player.role.name, toString(merlinlist)))
+			await gamestate.skin.send_image(gamestate.skin.merlin, player.user)
 		if player.role == ASSASSIN:
 			await player.user.send(assassinDM.format(player.name, player.role.name, toString(evillist)))
+			await gamestate.skin.send_image(gamestate.skin.assassin, player.user)
 		if player.role == MORDRED:
 			await player.user.send(mordredDM.format(player.name, player.role.name, toString(evillist)))
+			await gamestate.skin.send_image(gamestate.skin.mordred, player.user)
 		if player.role == MORGANA:
 			await player.user.send(morganaDM.format(player.name, player.role.name, toString(evillist)))
+			await gamestate.skin.send_image(gamestate.skin.morgana, player.user)
 		if player.role == PERCIVAL:
 			await player.user.send(percivalDM.format(player.name, player.role.name, toString(percivallist)))
+			await gamestate.skin.send_image(gamestate.skin.percival, player.user)
 		if player.role == OBERON:
 			await player.user.send(oberonDM.format(player.name, player.role.name))
+			await gamestate.skin.send_image(gamestate.skin.oberon, player.user)
 	await message.channel.send(night2Str)
 	gamestate.phase = Phase.QUEST
 
@@ -247,12 +259,14 @@ async def quest(client, message, gamestate):
 		await message.channel.send(teamStrQuestSel.format(
 			playersnamestring, gamestate.players[gamestate.leader].user.mention,
 			board_num, board_advs, board_fails, board_result))
+		await gamestate.skin.send_table(gamestate, message.channel)
 	else:
 		quest = gamestate.quests[gamestate.current_quest-1]
 		await message.channel.send(teamStr.format(
 			playersnamestring, gamestate.players[gamestate.leader].user.mention,
 			gamestate.current_quest, quest.adventurers, quest.required_fails,
 			boardstatestring, quest.adventurers))
+		await gamestate.skin.send_table(gamestate, message.channel)
 	while gamestate.phase == Phase.QUEST:
 		votetrigger = await client.wait_for("message", check=channel_check(message.channel))
 		party_ptn = RE_PARTY_QUEST_NAMES if gamestate.quest_selection else RE_PARTY_NAMES
@@ -393,9 +407,11 @@ async def privatevote(client, message, gamestate):
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
 				await confirm(pmtrigger)
+				await gamestate.skin.send_image(gamestate.skin.success_choice, pmtrigger.channel)
 				pass
 			elif pmtrigger.content == "!fail":
 				await confirm(pmtrigger)
+				await gamestate.skin.send_image(gamestate.skin.fail_choice, pmtrigger.channel)
 				fails += 1
 			if pmtrigger.content == "!stop":
 				await confirm(pmtrigger)
