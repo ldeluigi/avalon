@@ -88,11 +88,11 @@ class Skin:
     async def send_table(self, gamestate, channel):
         tableIm = Image.open(self.get_image(self.table))
         tableImDraw = ImageDraw.Draw(tableIm)
-        tableCenter = (int(tableIm.width / 2.34), int(tableIm.height / 1.8))
-        tableRadius = int(tableIm.width / 4.2)
+        tableCenter = (int(tableIm.width / 2.75), int(tableIm.height / 1.83))
+        tableRadius = int(tableIm.width / 3.6)
         firstAngle = math.pi / 2.8
-        stepAngle = 2 * math.pi / len(gamestate.players)
         rotated_list = gamestate.players[gamestate.leader:] + gamestate.players[:gamestate.leader]
+        stepAngle = 2 * math.pi / len(rotated_list)
         font = ImageFont.truetype(self.get_image(self.font), size=20)
         for player, index in zip(rotated_list, range(0, len(rotated_list))):
             xOffset = tableRadius * math.cos(firstAngle - index * stepAngle)
