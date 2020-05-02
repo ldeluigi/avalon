@@ -238,6 +238,7 @@ async def quest(client, message, gamestate):
 	boardstatestring = " ".join(BOARD_SYMBOLS[quest.winning_team] for quest in gamestate.quests)
 
 	if gamestate.quest_selection:
+		"""
 		board_num = "  ".join(map(str, range(1, len(gamestate.quests)+1)))
 		board_advs = "  ".join(str(q.adventurers) for q in gamestate.quests)
 		board_fails = "  ".join(str(q.required_fails) if q.required_fails > 1 else " " for q in gamestate.quests)
@@ -245,14 +246,21 @@ async def quest(client, message, gamestate):
 		await message.channel.send(teamStrQuestSel.format(
 			playersnamestring, gamestate.players[gamestate.leader].user.mention,
 			board_num, board_advs, board_fails, board_result))
+		"""
 		await gamestate.skin.send_table(gamestate, message.channel)
+		await gamestate.skin.send_board(gamestate, message.channel)
+		await message.channel.send(teamReminderQuestSel)
 	else:
 		quest = gamestate.quests[gamestate.current_quest-1]
+		"""
 		await message.channel.send(teamStr.format(
 			playersnamestring, gamestate.players[gamestate.leader].user.mention,
 			gamestate.current_quest, quest.adventurers, quest.required_fails,
 			boardstatestring, quest.adventurers))
+		"""
 		await gamestate.skin.send_table(gamestate, message.channel)
+		await gamestate.skin.send_board(gamestate, message.channel)
+		await message.channel.send(teamReminder.format(quest.adventurers))
 	while gamestate.phase == Phase.QUEST:
 		votetrigger = await client.wait_for("message", check=channel_check(message.channel))
 		party_ptn = RE_PARTY_QUEST_NAMES if gamestate.quest_selection else RE_PARTY_NAMES
@@ -328,10 +336,16 @@ async def teamvote(client, message, gamestate):
 			pmtrigger = await client.wait_for("message", check=votecheck)
 			if pmtrigger.content == "!approve":
 				await confirm(pmtrigger)
-				voteStr += ":black_small_square: "+pmtrigger.author.name+" voted **approve**.\n"
+				voteStr += ":black_small_square: "
+				if any(p.user.id == pmtrigger.author.id for p in gamestate.players):
+					voteStr += "⚔️ "
+				voteStr += pmtrigger.author.name+" voted **approve**.\n"
 			elif pmtrigger.content == "!reject":
 				await confirm(pmtrigger)
-				voteStr += ":black_small_square: "+pmtrigger.author.name+" voted **reject**.\n"
+				voteStr += ":black_small_square: "
+				if any(p.user.id == pmtrigger.author.id for p in gamestate.players):
+					voteStr += "⚔️ "
+				voteStr += pmtrigger.author.name+" voted **reject**.\n"
 				rejectcounter += 1
 			if pmtrigger.content == "!stop":
 				await confirm(pmtrigger)

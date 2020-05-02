@@ -1,10 +1,11 @@
 import discord
 import os
 import io
+import math
 from dataclasses import dataclass
 from typing import Tuple
 from enum import Enum
-from PIL import Image
+from PIL import Image, ImageDraw, ImageColor, ImageFont
 from enums import Team
 
 IMAGE_DIR = "img"
@@ -43,11 +44,13 @@ class Skin:
     role_back: str
     success_choice: str
     success_mark: str
+    table: str
+    font: str
     def get_image(self, path:str):
         return IMAGE_DIR + os.path.sep + self.path + os.path.sep +  path
     async def send_image(self, path: str, channel):
         await channel.send(file=discord.File(self.get_image(path)))
-    async def send_table(self, gamestate, channel):
+    async def send_board(self, gamestate, channel):
         path = self.board.p10.path
         if len(gamestate.players) == 5:
             path = self.board.p5.path
@@ -76,8 +79,36 @@ class Skin:
         arr = io.BytesIO()
         boardIm.save(arr, format='PNG')
         arr.seek(0)
+        result_file = discord.File(arr, "board.png")
+        await channel.send(file=result_file)
+        boardIm.close()
+        attemptIm.close()
+        successIm.close()
+        failIm.close()
+    async def send_table(self, gamestate, channel):
+        tableIm = Image.open(self.get_image(self.table))
+        tableImDraw = ImageDraw.Draw(tableIm)
+        tableCenter = (int(tableIm.width / 2.34), int(tableIm.height / 1.8))
+        tableRadius = int(tableIm.width / 4.2)
+        firstAngle = math.pi / 2.8
+        stepAngle = 2 * math.pi / len(gamestate.players)
+        rotated_list = gamestate.players[gamestate.leader:] + gamestate.players[:gamestate.leader]
+        font = ImageFont.truetype(self.get_image(self.font), size=20)
+        for player, index in zip(rotated_list, range(0, len(rotated_list))):
+            xOffset = tableRadius * math.cos(firstAngle - index * stepAngle)
+            yOffset = -(tableRadius * math.sin(firstAngle - index * stepAngle))
+            if (index is 0):
+                fillColor = ImageColor.getrgb("yellow")
+            else:
+                fillColor = ImageColor.getrgb("black")
+            tableImDraw.text(xy=(tableCenter[0] + xOffset, tableCenter[1] + yOffset),
+                text=player.name, fill=fillColor, font=font, align="center")
+        arr = io.BytesIO()
+        tableIm.save(arr, format='PNG')
+        arr.seek(0)
         result_file = discord.File(arr, "table.png")
         await channel.send(file=result_file)
+        tableIm.close()
 
 
 Skins = dict(
@@ -106,7 +137,9 @@ Skins = dict(
         reject_mark="reject_mark.png",
         role_back="role_back.png",
         success_choice="success_choose_card.png",
-        success_mark="success_mark.png"
+        success_mark="success_mark.png",
+        table="table.png",
+        font="medieval.ttf"
     )
 )
 
