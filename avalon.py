@@ -5,39 +5,13 @@ import re
 import shelve
 from random import shuffle, randint
 from datetime import datetime
-from enums import Team, Phase
-from dataclasses import dataclass, field
-from typing import List, Mapping, Optional
+from model import *
 from skins import Skins, Skin
-
 import discord
 from discord import DMChannel
-
 from text import *
+from skins import Skins, Skin
 
-@dataclass(frozen=True)
-class Role:
-	"""A role used in the game."""
-	team: Team   # team, either GOOD (loyal servants) or EVIL (traitors)
-	name: str    # full displayed name of the role
-	@property
-	def is_good(self):
-		return self.team is Team.GOOD
-	@property
-	def is_evil(self):
-		return self.team is Team.EVIL
-
-@dataclass
-class Quest:
-	adventurers: int                      # team size for this quest
-	required_fails: int = 1               # minimum fails needed for mission to fail
-	winning_team: Optional[Team] = None   # outcome of quest, initially None
-
-@dataclass
-class Player:
-	name: str                     # displayed name of player
-	user: discord.abc.User        # reference to Discord user
-	role: Optional[Role] = None   # player's role (set when game starts)
 
 @dataclass
 class GameState:
@@ -57,17 +31,6 @@ class GameState:
 	@property
 	def failed_quests(self):
 		return sum(quest.winning_team is Team.EVIL for quest in self.quests)
-
-SERVANTS = [Role(Team.GOOD, "{}, Loyal Servant of Arthur".format(name))
-            for name in ["Galahad", "Tristan", "Guinevere", "Lamorak"]]
-MINIONS = [Role(Team.EVIL, "{}, Minion of Mordred".format(name))
-           for name in ["Agravain"]]
-MERLIN = Role(Team.GOOD, "Merlin")
-PERCIVAL = Role(Team.GOOD, "Percival")
-ASSASSIN = Role(Team.EVIL, "The Assassin")
-MORGANA = Role(Team.EVIL, "Morgana")
-MORDRED = Role(Team.EVIL, "Mordred")
-OBERON = Role(Team.EVIL, "Oberon")
 
 BOARD_SYMBOLS = {None: ":red_circle:", Team.GOOD: ":o:", Team.EVIL: ":no_entry_sign:"}
 BOARD_CHARS = {None: " ", Team.GOOD: "O", Team.EVIL: "X"}

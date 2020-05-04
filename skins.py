@@ -2,11 +2,12 @@ import discord
 import os
 import io
 import math
+import random
 from dataclasses import dataclass
 from typing import Tuple
 from enum import Enum
 from PIL import Image, ImageDraw, ImageColor, ImageFont
-from enums import Team
+from model import *
 
 IMAGE_DIR = "img"
 
@@ -103,6 +104,40 @@ class Skin:
                 fillColor = ImageColor.getrgb("black")
             tableImDraw.text(xy=(tableCenter[0] + xOffset, tableCenter[1] + yOffset),
                 text=player.name, fill=fillColor, font=font, align="center")
+        roles_list = list(map(lambda p: p.role, gamestate.players))
+        random.shuffle(roles_list)
+        role_height = int(tableIm.height / len(roles_list))
+
+        def get_image_for_role(role):
+            if role in SERVANTS:
+                return Image.open(self.get_image(random.choice(self.loyal_servants)))
+            elif role in MINIONS:
+                return Image.open(self.get_image(random.choice(self.evil_servants)))
+            elif role is MERLIN:
+                return Image.open(self.get_image(self.merlin))
+            elif role is PERCIVAL:
+                return Image.open(self.get_image(self.percival))
+            elif role is ASSASSIN:
+                return Image.open(self.get_image(self.assassin))
+            elif role is MORGANA:
+                return Image.open(self.get_image(self.morgana))
+            elif role is MORDRED:
+                return Image.open(self.get_image(self.mordred))
+            elif role is OBERON:
+                return Image.open(self.get_image(self.oberon))
+        def get_resized_image_for_role(role):
+            roleIm = get_image_for_role(role)
+            return roleIm.resize((int(role_height * roleIm.width / roleIm.height), int(role_height)))
+        
+        if all(role for role in roles_list):
+            roles_images = list(map(get_resized_image_for_role, roles_list))
+            table_offset = max(map(lambda im: im.width, roles_images))
+            newIm = Image.new("RGBA", (tableIm.width + table_offset, tableIm.height))
+            newIm.alpha_composite(tableIm, dest=(table_offset, 0))
+            for index, roleIm in zip(range(0, len(roles_images)), roles_images):
+                newIm.alpha_composite(roleIm, dest=(0, index * role_height))
+                roleIm.close()
+            tableIm = newIm
         arr = io.BytesIO()
         tableIm.save(arr, format='PNG')
         arr.seek(0)
