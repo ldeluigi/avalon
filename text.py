@@ -14,9 +14,9 @@ notEnoughPlayers = "We cannot begin with less than five players."
 
 startStr = "```Starting game```\n{}\n\nFor `{}` players, there are `{}` Good and `{}` Evil players.\n\n**Roles active:**\n{}\n*`The list order has been randomized and player/role position has no significance on distribution`*.\n\nAny transaction of information must be public to **all** players. No discussion is allowed outside of the voice/text channel where **all** players are present. Strictly no private messaging!"
 
-nightStr = "\n```Night Phase Triggered```\nEvil reveals itself; and Merlin looks into the future.\n\n*Sending private messages...*\n\n"
+nightStr = "\n```Night Phase```\nEvil reveals itself; and Merlin looks into the future.\n\n*Sending private messages...*\n\n"
 
-night2Str = "I have whispered your roles, please be reminded to maintain the integrity (and fun) of the game by keeping discussions within the game channel.\n"
+night2Str = "```First Day```\nI have whispered your roles, please be reminded to maintain the integrity (and fun) of the game by keeping discussions within the game channel.\n"
 
 loyalDM = "```A Secret Message for {}```\nYou are **{}**.\n\nYou are on the side of **Good** and must ensure three **successful** quests to secure victory for your team. You are not given any additional information about the roles of other players and you do not have the option to fail quests.\n\nTo assist Merlin, you must be observant and vocal.\n\n"
 
