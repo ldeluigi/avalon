@@ -46,6 +46,8 @@ malformedQuestSel = "Malformed Request. Must indicate quest number between 1 and
 
 questAlreadyComplete = "Quest {} already complete."
 
+privateVoteInfo = "The {} needs your vote. Type `{}` or `{}`."
+
 partyStr = "The Leader has triggered party command."
 
 malformedStr = "Malformed Request. This quest is for {} adventurers."

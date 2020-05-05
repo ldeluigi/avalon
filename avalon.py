@@ -3,14 +3,15 @@
 import random
 import re
 import shelve
-from random import shuffle, randint
 from datetime import datetime
-from model import *
-from skins import Skins, Skin
+from random import randint, shuffle
+
 import discord
 from discord import DMChannel
+
+from model import *
+from skins import Skin, Skins
 from text import *
-from skins import Skins, Skin
 
 
 @dataclass
@@ -161,7 +162,6 @@ async def night(client, message, gamestate):
 		if player.role in SERVANTS:
 			await player.user.send(loyalDM.format(player.name, player.role.name))
 			await gamestate.skin.send_image(random.choice(gamestate.skin.loyal_servants), player.user)
-			#await send_image(gamestate.skin, "lo")
 		if player.role in MINIONS:
 			await player.user.send(minionDM.format(player.name, player.role.name, toString(evillist)))
 			await gamestate.skin.send_image(random.choice(gamestate.skin.evil_servants), player.user)
@@ -198,8 +198,9 @@ async def quest(client, message, gamestate):
 	playersnamestring = "|"
 	for x in gamestate.players:
 		playersnamestring += "` "+x.name+" `|"
+	"""
 	boardstatestring = " ".join(BOARD_SYMBOLS[quest.winning_team] for quest in gamestate.quests)
-
+	"""
 	if gamestate.quest_selection:
 		"""
 		board_num = "  ".join(map(str, range(1, len(gamestate.quests)+1)))
@@ -294,8 +295,9 @@ async def teamvote(client, message, gamestate):
 		voters = [p.user for p in gamestate.players]
 		num_voters = len(voters)
 		# del voters[leader]   # enable to exclude leader from voting
-		for _ in range(num_voters):
+		for voter in voters:
 			vc += 1
+			await voter.send(privateVoteInfo.format("Leader " + gamestate.players[gamestate.leader].name, "!approve", "!reject"))
 			pmtrigger = await client.wait_for("message", check=votecheck)
 			if pmtrigger.content == "!approve":
 				await confirm(pmtrigger)
@@ -366,7 +368,8 @@ async def privatevote(client, message, gamestate):
 		await message.channel.send(privatevoteStr.format(namestring))
 
 		votecount = len(activeplayers)
-		for _ in range(0,votecount):
+		for voter in activeplayers:
+			await voter.send(privateVoteInfo.format("Quest", "!success", "!fail"))
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
 				await confirm(pmtrigger)
@@ -437,7 +440,7 @@ async def gameover(client, message, gamestate):
 			await addscore(client, message, player.user)
 	roles_str = "\n".join("{} is **{}**".format(player.name, player.role.name)
 			for player in gamestate.players)
-	roles_str += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
+	#roles_str += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
 	await message.channel.send(roles_str)
 	await message.channel.send(stopStr)
 	gamestate.phase = Phase.INIT
