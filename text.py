@@ -16,7 +16,7 @@ startStr = "```Starting game```\n{}\n\nFor `{}` players, there are `{}` Good and
 
 nightStr = "\n```Night Phase```\nEvil reveals itself; and Merlin looks into the future.\n\n*Sending private messages...*\n\n"
 
-night2Str = "```First Day```\nI have whispered your roles, please be reminded to maintain the integrity (and fun) of the game by keeping discussions within the game channel.\n"
+night2Str = "```Morning Phase```\nI have whispered your roles, please be reminded to maintain the integrity (and fun) of the game by keeping discussions within the game channel.\n"
 
 loyalDM = "```A Secret Message for {}```\nYou are **{}**.\n\nYou are on the side of **Good** and must ensure three **successful** quests to secure victory for your team. You are not given any additional information about the roles of other players and you do not have the option to fail quests.\n\nTo assist Merlin, you must be observant and vocal.\n\n"
 
@@ -36,11 +36,11 @@ oberonDM = "```A Secret Message for {}```\nYou are **{}**.\n\nYou are on the sid
 
 teamReminder = "To start a vote, the leader must type `!party` followed by {} names (Tag the names with '@')."
 
-teamStr = "\n```Team Building Phase Triggered```\n{}\n\n{} is the party leader. The leader can be in the team, but is not required to be so.\n\n**Quest: **`{}`\n**Number of Adventurers: **`{}`\n**Number of fails required: **`{}`\n\n**Board State: **{}\n\nDiscuss carefully, then propose who shall embark on the quest. " + teamReminder
+teamStr = "\n```Team Building Phase```\n{}\n\n{} is the party leader. The leader can be in the team, but is not required to be so.\n\n**Quest: **`{}`\n**Number of Adventurers: **`{}`\n**Number of fails required: **`{}`\n\n**Board State: **{}\n\nDiscuss carefully, then propose who shall embark on the quest. " + teamReminder
 
-teamReminderQuestSel = "To start a vote, the leader must type `!party <quest number> <names>` (Tag the names with '@')."
+teamReminderQuestSel = "```Day Phase```\nTo start a vote, the leader must type `!party <quest number> <names>` (Tag the names with '@')."
 
-teamStrQuestSel = "\n```Team Building Phase Triggered```\n{}\n\n{} is the party leader. The leader can be in the team, but is not required to be so.\n\n**Board State: **\n```    Quest #:  {}\nAdventurers:  {}\n      Fails:  {}\n    Outcome:  {}\n```\n\nDiscuss carefully, then propose who shall embark on the quest. " + teamReminderQuestSel
+teamStrQuestSel = "\n```Quest Phase```\n{}\n\n{} is the party leader. The leader can be in the team, but is not required to be so.\n\n**Board State: **\n```    Quest #:  {}\nAdventurers:  {}\n      Fails:  {}\n    Outcome:  {}\n```\n\nDiscuss carefully, then propose who shall embark on the quest. " + teamReminderQuestSel
 
 malformedQuestSel = "Malformed Request. Must indicate quest number between 1 and {}, and then tag the party members."
 
@@ -56,8 +56,8 @@ duplicateStr = "Malformed Request. You may not tag the same person more than onc
 
 playernotingame = "{} is not part of the game. Please only tag adventurers with roles."
 
-teamvoteStr = "\n```Team Voting Phase Triggered```\nPlease `!approve` or `!reject` the party via **DIRECT MESSAGE**.\n\n`{}` attempts left for this quest before **Evil** wins.\n\n"
+teamvoteStr = "\n```Team Voting Phase```\nPlease `!approve` or `!reject` the party via **DIRECT MESSAGE**.\n\n`{}` attempts left for this quest before **Evil** wins.\n\n"
 
-privatevoteStr = "\n```Private Voting Phase Triggered```\nThe quest is now underway. Each adventurer will now attempt to complete their individual task.\n\n{}, please direct me either `!success` or `!fail`. Good-aligned players may only complete quests successfully."
+privatevoteStr = "\n```Private Voting Phase```\nThe quest is now underway. Each adventurer will now attempt to complete their individual task.\n\n{}, please direct me either `!success` or `!fail`. Good-aligned players may only complete quests successfully."
 
-gameoverStr = "\n```Endgame Triggered```\n"
+gameoverStr = "\n```Endgame```\n"

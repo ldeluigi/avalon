@@ -50,8 +50,10 @@ class Skin:
     font: str
     def get_image(self, path:str):
         return IMAGE_DIR + os.path.sep + self.path + os.path.sep +  path
+    def get_image_file(self, path:str):
+        return discord.File(self.get_image(path))
     async def send_image(self, path: str, channel):
-        await channel.send(file=discord.File(self.get_image(path)))
+        await channel.send(file=self.get_image_file(path))
     async def send_board(self, gamestate, channel):
         def _make_board():
             path = self.board.p10.path

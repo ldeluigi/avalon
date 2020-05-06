@@ -160,29 +160,29 @@ async def night(client, message, gamestate):
 	for player in gamestate.players:
 		#print(str(player.name)+" is "+role.name)	#Cheat code to reveal all roles for debugging purposes
 		if player.role in SERVANTS:
-			await player.user.send(loyalDM.format(player.name, player.role.name))
-			await gamestate.skin.send_image(random.choice(gamestate.skin.loyal_servants), player.user)
+			await player.user.send(loyalDM.format(player.name, player.role.name), 
+			file=gamestate.skin.get_image_file(random.choice(gamestate.skin.loyal_servants)))
 		if player.role in MINIONS:
-			await player.user.send(minionDM.format(player.name, player.role.name, toString(evillist)))
-			await gamestate.skin.send_image(random.choice(gamestate.skin.evil_servants), player.user)
+			await player.user.send(minionDM.format(player.name, player.role.name, toString(evillist)),
+			file=gamestate.skin.get_image_file(random.choice(gamestate.skin.evil_servants)))
 		if player.role == MERLIN:
-			await player.user.send(merlinDM.format(player.name, player.role.name, toString(merlinlist)))
-			await gamestate.skin.send_image(gamestate.skin.merlin, player.user)
+			await player.user.send(merlinDM.format(player.name, player.role.name, toString(merlinlist)),
+			file=gamestate.skin.get_image_file(gamestate.skin.merlin, player.user))
 		if player.role == ASSASSIN:
-			await player.user.send(assassinDM.format(player.name, player.role.name, toString(evillist)))
-			await gamestate.skin.send_image(gamestate.skin.assassin, player.user)
+			await player.user.send(assassinDM.format(player.name, player.role.name, toString(evillist)),
+			file=gamestate.skin.get_image_file(gamestate.skin.assassin, player.user))
 		if player.role == MORDRED:
-			await player.user.send(mordredDM.format(player.name, player.role.name, toString(evillist)))
-			await gamestate.skin.send_image(gamestate.skin.mordred, player.user)
+			await player.user.send(mordredDM.format(player.name, player.role.name, toString(evillist)),
+			file=gamestate.skin.get_image_file(gamestate.skin.mordred, player.user))
 		if player.role == MORGANA:
-			await player.user.send(morganaDM.format(player.name, player.role.name, toString(evillist)))
-			await gamestate.skin.send_image(gamestate.skin.morgana, player.user)
+			await player.user.send(morganaDM.format(player.name, player.role.name, toString(evillist)),
+			file=gamestate.skin.get_image_file(gamestate.skin.morgana, player.user))
 		if player.role == PERCIVAL:
-			await player.user.send(percivalDM.format(player.name, player.role.name, toString(percivallist)))
-			await gamestate.skin.send_image(gamestate.skin.percival, player.user)
+			await player.user.send(percivalDM.format(player.name, player.role.name, toString(percivallist)),
+			file=gamestate.skin.get_image_file(gamestate.skin.percival, player.user))
 		if player.role == OBERON:
-			await player.user.send(oberonDM.format(player.name, player.role.name))
-			await gamestate.skin.send_image(gamestate.skin.oberon, player.user)
+			await player.user.send(oberonDM.format(player.name, player.role.name),
+			file=gamestate.skin.get_image_file(gamestate.skin.oberon, player.user))
 	await message.channel.send(night2Str)
 	gamestate.phase = Phase.QUEST
 
