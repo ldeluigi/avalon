@@ -9,3 +9,6 @@ __pycache__/
 
 # Ignore mypy cache
 .mypy_cache
+
+# Ignore venv
+venv/
