@@ -1,6 +1,11 @@
 # The Resistance: Avalon - Discord Edition
 *Discord bot built using discord.py library. Original game by Don Eskridge.*
 
+You can host the bot yourself (remember to set the .env var SECRET_TOKEN to your discord bot token),
+or you can add the public instance by clicking on this link:
+
+https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=8&scope=bot
+
 # Technical Requirements
 *Only if you wish to download the source code and host your own copy of Avalon*
 - Python 3.5
@@ -8,7 +13,11 @@
 - discordpy - https://github.com/Rapptz/discord.py  
   `pip install -U discord.py`
 - dotenv - https://pypi.org/project/python-dotenv/  
-`pip install -U python-dotenv`
+  `pip install -U python-dotenv`
+- pillow - https://pillow.readthedocs.io/en/stable/
+  `pip install -U Pillow`
+
+In alternative of the pip commands you can simply run `pip install -r requirements.txt`
 
 
 # Rules
@@ -42,6 +51,7 @@ Avalon is a game of hidden loyalty. Players are either Loyal Servants of Arthur 
 - The Assassin - If Good wins, if the Assassin is able to correctly identify Merlin- Evil will win instead.
 - Morgana - Appears to Percival as Merlin. Must attempt to turn Percival against the true Merlin.
 - Mordred - The Big Bad. Fully hidden. Merlin does not know who the Mordred player is.
+- Oberon - The Blind Bad. Other evil characters don't know who he is, neither he knows who the other bads are.
 
 # Commands
 - `!avalon` - Starts the game.
@@ -54,8 +64,7 @@ Avalon is a game of hidden loyalty. Players are either Loyal Servants of Arthur 
 - `!assassinate` - Used by the Assassin in the event of a Good victory to assassinate a member of the game. This command does not have any input verification and only allows you **one** try. Ensure that you @tag the correct person!
 
 # Coming Soon
-- Oberon
-- Ability to select exactly which roles come into play.
+- Suggest more features in the Issue tab of GitHub.
 
 # Original Rulebook
 The original game rules can be found at http://upload.snakesandlattes.com/rules/r/ResistanceAvalon.pdf
