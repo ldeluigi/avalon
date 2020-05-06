@@ -3,11 +3,14 @@ import random
 import linecache
 import re
 import shelve
+import sys
+import os
 from random import shuffle
 from avalon import avalon, confirm
-from discord import DMChannel
+from discord import DMChannel, Message
+from discord.errors import Forbidden
+from traceback import print_exc
 #from wordgame import *
-import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -51,7 +54,7 @@ async def on_message(message):
 	if message.content.startswith('!help'):
 		# message.channel.send()
 		await confirm(message)
-		await message.author.send('Please visit https://cameronleong.github.io/avalon to find out more.')
+		await message.author.send('Please visit https://github.com/ldeluigi/avalon to find out more.')
 
 
 @client.event
@@ -60,6 +63,18 @@ async def on_ready():
 	print('Username: ' + client.user.name)
 	print('ID: ' + str(client.user.id))
 	await client.change_presence(activity = game)
+
+@client.event
+async def on_error(event, *args, **kwargs):
+	if sys.exc_info()[0] == Forbidden and \
+		event=="on_message" and \
+		isinstance(args[0], Message):
+		message = args[0]
+		await message.channel.send(
+			"```Error```\nInsufficient permissions, I can't do it. Type `!help` for help."
+			)
+	else:
+		print_exc()
 
 def run(token):
 	try:
