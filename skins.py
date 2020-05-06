@@ -106,7 +106,7 @@ class Skin:
                 for player, index in zip(rotated_list, range(0, len(rotated_list))):
                     xOffset = tableRadius * math.cos(firstAngle - index * stepAngle)
                     yOffset = -(tableRadius * math.sin(firstAngle - index * stepAngle))
-                    if (index is 0):
+                    if (index == 0):
                         fillColor = ImageColor.getrgb("yellow")
                     else:
                         fillColor = ImageColor.getrgb("black")
