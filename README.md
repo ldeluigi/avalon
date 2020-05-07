@@ -22,10 +22,13 @@ https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permission
 **Alternatively, you can simply run** `pip install -r requirements.txt`
 
 # Run instructions
-`python dreamlord.py`  
-
-
+1. Download dependencies   
 *Note: make sure python version meets requirements.*
+1. Setup the `SECRET_TOKEN` as environment variable or create a file called ".env" in the main folder containing:   
+`SECRET_TOKEN=token`   
+Where `token` is your discord bot token. ([Learn more](https://discord.com/developers/docs/topics/oauth2))   
+1. Run the start command:   
+`python dreamlord.py`  
 
 # Rules
 *Information in this section drawn from a combination of the game's manual, Wikipedia and theresistanceonline.com*
