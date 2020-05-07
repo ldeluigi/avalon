@@ -6,6 +6,8 @@ or you can add the public instance by clicking on this link:
 
 https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=67632193&scope=bot
 
+*Note: permissions listed in the link are all required. Not grating one or more of them could lead to errors.*
+
 # Technical Requirements
 *Only if you wish to download the source code and host your own copy of Avalon*
 - Python 3.5
