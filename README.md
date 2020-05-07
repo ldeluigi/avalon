@@ -4,7 +4,7 @@
 You can host the bot yourself (remember to set the .env var SECRET_TOKEN to your discord bot token),
 or you can add the public instance by clicking on this link:
 
-https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=8&scope=bot
+https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=67632193&scope=bot
 
 # Technical Requirements
 *Only if you wish to download the source code and host your own copy of Avalon*
