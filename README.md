@@ -21,6 +21,8 @@ https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permission
 
 # Run instructions
 `python dreamlord.py`  
+
+
 *Note: make sure python version meets requirements.*
 
 # Rules
