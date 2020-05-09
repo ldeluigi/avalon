@@ -62,17 +62,17 @@ def setup_game(num_players):
 	if num_players >= 7:
 		quests[3].required_fails = 2
 	if num_players == 5:
-		roles = SERVANTS[:2] + MINIONS[:1] + [MERLIN, ASSASSIN]
+		roles = SERVANTS[:1] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	elif num_players == 6:
-		roles = SERVANTS[:3] + MINIONS[:1] + [MERLIN, ASSASSIN]
+		roles = SERVANTS[:2] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	elif num_players == 7:
-		roles = SERVANTS[:2] + MINIONS[:1] + [MERLIN, ASSASSIN, PERCIVAL, MORGANA]
+		roles = SERVANTS[:2] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, OBERON]
 	elif num_players == 8:
-		roles = SERVANTS[:3] + MINIONS[:1] + [MERLIN, ASSASSIN, PERCIVAL, MORGANA]
+		roles = SERVANTS[:3] + MINIONS[:1] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	elif num_players == 9:
-		roles = SERVANTS[:3] + MINIONS[:1] + [MERLIN, ASSASSIN, MORDRED, PERCIVAL, MORGANA]
+		roles = SERVANTS[:4] + [MERLIN, PERCIVAL, ASSASSIN, MORDRED, MORGANA]
 	elif num_players == 10:
-		roles = SERVANTS[:4] + MINIONS[:1] + [MERLIN, ASSASSIN, MORDRED, PERCIVAL, MORGANA]
+		roles = SERVANTS[:4] + MINIONS[:2] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	return quests, roles
 
 async def avalon(client, message):			#main loop
@@ -160,7 +160,7 @@ async def night(client, message, gamestate):
 	for player in gamestate.players:
 		#print(str(player.name)+" is "+role.name)	#Cheat code to reveal all roles for debugging purposes
 		if player.role in SERVANTS:
-			await player.user.send(loyalDM.format(player.name, player.role.name), 
+			await player.user.send(loyalDM.format(player.name, player.role.name),
 			file=gamestate.skin.get_image_file(random.choice(gamestate.skin.loyal_servants)))
 		if player.role in MINIONS:
 			await player.user.send(minionDM.format(player.name, player.role.name, toString(evillist)),

@@ -45,7 +45,7 @@ class Player:
 SERVANTS = [Role(Team.GOOD, "{}, Loyal Servant of Arthur".format(name))
             for name in ["Galahad", "Tristan", "Guinevere", "Lamorak"]]
 MINIONS = [Role(Team.EVIL, "{}, Minion of Mordred".format(name))
-           for name in ["Agravain"]]
+           for name in ["Agravain", "Gareth"]]
 MERLIN = Role(Team.GOOD, "Merlin")
 PERCIVAL = Role(Team.GOOD, "Percival")
 ASSASSIN = Role(Team.EVIL, "The Assassin")
