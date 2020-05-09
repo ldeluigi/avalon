@@ -4,21 +4,31 @@
 You can host the bot yourself (remember to set the .env var SECRET_TOKEN to your discord bot token),
 or you can add the public instance by clicking on this link:
 
-https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=8&scope=bot
+https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=67632193&scope=bot
+
+*Note: permissions listed in the link are all required. Not granting one or more of them could lead to errors.*
 
 # Technical Requirements
 *Only if you wish to download the source code and host your own copy of Avalon*
 - Python 3.5
 - pip - https://pip.pypa.io/en/stable/installing
-- discordpy - https://github.com/Rapptz/discord.py  
+- discord.py - https://github.com/Rapptz/discord.py  
   `pip install -U discord.py`
 - dotenv - https://pypi.org/project/python-dotenv/  
   `pip install -U python-dotenv`
-- pillow - https://pillow.readthedocs.io/en/stable/
+- pillow - https://pillow.readthedocs.io/en/stable/  
   `pip install -U Pillow`
 
-In alternative of the pip commands you can simply run `pip install -r requirements.txt`
+**Alternatively, you can simply run** `pip install -r requirements.txt`
 
+# Run instructions
+1. Download dependencies   
+*Note: make sure python version meets requirements.*
+1. Setup the `SECRET_TOKEN` as environment variable or create a file called ".env" in the main folder containing:   
+`SECRET_TOKEN=token`   
+Where `token` is your discord bot token. ([Learn more](https://discord.com/developers/docs/topics/oauth2))   
+1. Run the start command:   
+`python dreamlord.py`  
 
 # Rules
 *Information in this section drawn from a combination of the game's manual, Wikipedia and theresistanceonline.com*
@@ -64,7 +74,7 @@ Avalon is a game of hidden loyalty. Players are either Loyal Servants of Arthur 
 - `!assassinate` - Used by the Assassin in the event of a Good victory to assassinate a member of the game. This command does not have any input verification and only allows you **one** try. Ensure that you @tag the correct person!
 
 # Coming Soon
-- Suggest more features in the Issue tab of GitHub.
+- Suggest more features in the [Issue tab](https://github.com/ldeluigi/avalon/issues) of GitHub.
 
 # Original Rulebook
 The original game rules can be found at http://upload.snakesandlattes.com/rules/r/ResistanceAvalon.pdf

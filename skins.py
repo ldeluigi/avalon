@@ -113,7 +113,7 @@ class Skin:
                     tableImDraw.text(xy=(tableCenter[0] + xOffset, tableCenter[1] + yOffset),
                         text=player.name, fill=fillColor, font=font, align="center")
                 roles_list = list(map(lambda p: p.role, gamestate.players))
-                random.shuffle(roles_list)
+                roles_list.sort(key=lambda role: role.name)
                 role_height = int(tableIm.height / len(roles_list))
 
                 def get_image_for_role(role):
