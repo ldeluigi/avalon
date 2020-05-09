@@ -167,22 +167,22 @@ async def night(client, message, gamestate):
 			file=gamestate.skin.get_image_file(random.choice(gamestate.skin.evil_servants)))
 		if player.role == MERLIN:
 			await player.user.send(merlinDM.format(player.name, player.role.name, toString(merlinlist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.merlin, player.user))
+			file=gamestate.skin.get_image_file(gamestate.skin.merlin))
 		if player.role == ASSASSIN:
 			await player.user.send(assassinDM.format(player.name, player.role.name, toString(evillist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.assassin, player.user))
+			file=gamestate.skin.get_image_file(gamestate.skin.assassin))
 		if player.role == MORDRED:
 			await player.user.send(mordredDM.format(player.name, player.role.name, toString(evillist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.mordred, player.user))
+			file=gamestate.skin.get_image_file(gamestate.skin.mordred))
 		if player.role == MORGANA:
 			await player.user.send(morganaDM.format(player.name, player.role.name, toString(evillist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.morgana, player.user))
+			file=gamestate.skin.get_image_file(gamestate.skin.morgana))
 		if player.role == PERCIVAL:
 			await player.user.send(percivalDM.format(player.name, player.role.name, toString(percivallist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.percival, player.user))
+			file=gamestate.skin.get_image_file(gamestate.skin.percival))
 		if player.role == OBERON:
 			await player.user.send(oberonDM.format(player.name, player.role.name),
-			file=gamestate.skin.get_image_file(gamestate.skin.oberon, player.user))
+			file=gamestate.skin.get_image_file(gamestate.skin.oberon))
 	await message.channel.send(night2Str)
 	gamestate.phase = Phase.QUEST
 
@@ -280,7 +280,7 @@ async def teamvote(client, message, gamestate):
 		if isinstance(msg.channel, DMChannel):
 			if msg.author in voters:
 				if msg.content == "!approve" or msg.content == "!reject":
-					voters.remove(msg.author)
+					#voters.remove(msg.author)
 					return True
 		elif msg.content.startswith('!stop'):
 			return True
@@ -296,22 +296,25 @@ async def teamvote(client, message, gamestate):
 		num_voters = len(voters)
 		# del voters[leader]   # enable to exclude leader from voting
 		for voter in voters:
-			vc += 1
 			await voter.send(privateVoteInfo.format("Leader " + gamestate.players[gamestate.leader].name, "!approve", "!reject"))
+		while voters:
+			vc += 1
 			pmtrigger = await client.wait_for("message", check=votecheck)
 			if pmtrigger.content == "!approve":
 				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "
-				if any(p.user.id == pmtrigger.author.id for p in gamestate.players):
+				if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
 					voteStr += "⚔️ "
 				voteStr += pmtrigger.author.name+" voted **approve**.\n"
+				voters.remove(pmtrigger.author)
 			elif pmtrigger.content == "!reject":
 				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "
-				if any(p.user.id == pmtrigger.author.id for p in gamestate.players):
+				if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
 					voteStr += "⚔️ "
 				voteStr += pmtrigger.author.name+" voted **reject**.\n"
 				rejectcounter += 1
+				voters.remove(pmtrigger.author)
 			if pmtrigger.content == "!stop":
 				await confirm(pmtrigger)
 				stop = True
@@ -351,11 +354,9 @@ async def privatevote(client, message, gamestate):
 			if isinstance(msg.channel, DMChannel):
 				if msg.author in activeplayers and gamestate.players_by_duid[msg.author.id].role.is_evil:
 					if msg.content == "!success" or msg.content == "!fail":
-						activeplayers.remove(msg.author)
 						return True
 				elif msg.author in activeplayers:
 					if msg.content == "!success":
-						activeplayers.remove(msg.author)
 						return True
 			elif msg.content.startswith('!stop'):
 				return True
@@ -370,13 +371,16 @@ async def privatevote(client, message, gamestate):
 		votecount = len(activeplayers)
 		for voter in activeplayers:
 			await voter.send(privateVoteInfo.format("Quest", "!success", "!fail"))
+		while activeplayers:
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
 				await confirm(pmtrigger)
+				activeplayers.remove(pmtrigger.author)
 				await gamestate.skin.send_image(gamestate.skin.success_choice, pmtrigger.channel)
 				pass
 			elif pmtrigger.content == "!fail":
 				await confirm(pmtrigger)
+				activeplayers.remove(pmtrigger.author)
 				await gamestate.skin.send_image(gamestate.skin.fail_choice, pmtrigger.channel)
 				fails += 1
 			if pmtrigger.content == "!stop":
