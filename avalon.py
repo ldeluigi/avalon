@@ -410,6 +410,7 @@ async def privatevote(client, message, gamestate):
 			gamestate.phase = Phase.QUEST
 
 async def gameover(client, message, gamestate):
+	await gamestate.skin.send_board(gamestate, message.channel)
 	assassin = next(filter(lambda p: p.role == ASSASSIN, gamestate.players)).user
 	merlin = next(filter(lambda p: p.role == MERLIN, gamestate.players)).user
 	def assassincheck(msg):
