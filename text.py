@@ -38,7 +38,7 @@ teamReminder = "To start a vote, the leader must type `!party` followed by {} na
 
 teamStr = "\n```Team Building Phase```\n{}\n\n{} is the party leader. The leader can be in the team, but is not required to be so.\n\n**Quest: **`{}`\n**Number of Adventurers: **`{}`\n**Number of fails required: **`{}`\n\n**Board State: **{}\n\nDiscuss carefully, then propose who shall embark on the quest. " + teamReminder
 
-teamReminderQuestSel = "```Day Phase```\nTo start a vote, the leader must type `!party <quest number> <names>` (Tag the names with '@')."
+teamReminderQuestSel = "```Planning Phase```\nTo start a vote, the leader must type `!party <quest number> <names>` (Tag the names with '@')."
 
 teamStrQuestSel = "\n```Quest Phase```\n{}\n\n{} is the party leader. The leader can be in the team, but is not required to be so.\n\n**Board State: **\n```    Quest #:  {}\nAdventurers:  {}\n      Fails:  {}\n    Outcome:  {}\n```\n\nDiscuss carefully, then propose who shall embark on the quest. " + teamReminderQuestSel
 
