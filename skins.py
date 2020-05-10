@@ -13,17 +13,17 @@ from asyncio import get_event_loop
 IMAGE_DIR = "img"
 
 @dataclass(frozen=True)
-class Board:
+class PlayerBaseItem:
     path: str
 
 @dataclass(frozen=True)
-class Boards:
-    p5: Board
-    p6: Board
-    p7: Board
-    p8: Board
-    p9: Board
-    p10: Board
+class PlayerBase:
+    p5: PlayerBaseItem
+    p6: PlayerBaseItem
+    p7: PlayerBaseItem
+    p8: PlayerBaseItem
+    p9: PlayerBaseItem
+    p10: PlayerBaseItem
 
 @dataclass(frozen=True)
 class Skin:
@@ -31,7 +31,7 @@ class Skin:
     path: str
     assassin: str
     background: str
-    board: Boards
+    board: PlayerBase
     evil_servants: Tuple[str]
     fail_choice: str
     fail_mark: str
@@ -46,7 +46,7 @@ class Skin:
     role_back: str
     success_choice: str
     success_mark: str
-    table: str
+    table: PlayerBase
     font: str
     def get_image(self, path:str):
         return IMAGE_DIR + os.path.sep + self.path + os.path.sep +  path
@@ -95,12 +95,23 @@ class Skin:
         await channel.send(file=await get_event_loop().run_in_executor(None, _make_board))
     async def send_table(self, gamestate, channel):
         def _make_table():
-            with Image.open(self.get_image(self.table)) as tableIm:
+            path = self.table.p10.path
+            if len(gamestate.players) == 5:
+                path = self.table.p5.path
+            elif len(gamestate.players) == 6:
+                path = self.table.p6.path
+            elif len(gamestate.players) == 7:
+                path = self.table.p7.path
+            elif len(gamestate.players) == 8:
+                path = self.table.p8.path
+            elif len(gamestate.players) == 9:
+                path = self.table.p9.path
+            with Image.open(self.get_image(path)) as tableIm:
                 tableImDraw = ImageDraw.Draw(tableIm)
                 tableCenter = (int(tableIm.width / 2.75), int(tableIm.height / 1.83))
                 tableRadius = int(tableIm.width / 3.6)
-                firstAngle = math.pi / 2.8
                 player_list = gamestate.players
+                firstAngle = 2 * math.pi / len(player_list)
                 stepAngle = 2 * math.pi / len(player_list)
                 font = ImageFont.truetype(self.get_image(self.font), size=20)
                 for player, index in zip(player_list, range(0, len(player_list))):
@@ -109,7 +120,7 @@ class Skin:
                     if (index == gamestate.leader):
                         fillColor = ImageColor.getrgb("yellow")
                     else:
-                        fillColor = ImageColor.getrgb("black")
+                        fillColor = ImageColor.getrgb("white")
                     tableImDraw.text(xy=(tableCenter[0] + xOffset, tableCenter[1] + yOffset),
                         text=player.name, fill=fillColor, font=font, align="center")
                 roles_list = list(map(lambda p: p.role, gamestate.players))
@@ -186,13 +197,13 @@ Skins = dict(
         path="avalon",
         assassin="assassin.png",
         background="wood_bg.jpg",
-        board=Boards(
-            p5=Board("5_players_board.png"),
-            p6=Board("6_players_board.png"),
-            p7=Board("7_players_board.png"),
-            p8=Board("8_players_board.png"),
-            p9=Board("9_players_board.png"),
-            p10=Board("10_players_board.png")
+        board=PlayerBase(
+            p5=PlayerBaseItem("5_players_board.png"),
+            p6=PlayerBaseItem("6_players_board.png"),
+            p7=PlayerBaseItem("7_players_board.png"),
+            p8=PlayerBaseItem("8_players_board.png"),
+            p9=PlayerBaseItem("9_players_board.png"),
+            p10=PlayerBaseItem("10_players_board.png")
         ),
         evil_servants=("evil_servant.png",),
         fail_choice="fail_choose_card.png",
@@ -208,7 +219,14 @@ Skins = dict(
         role_back="role_back.png",
         success_choice="success_choose_card.png",
         success_mark="success_mark.png",
-        table="table.png",
+        table=PlayerBase(
+            p5=PlayerBaseItem("5_players_table.png"),
+            p6=PlayerBaseItem("6_players_table.png"),
+            p7=PlayerBaseItem("7_players_table.png"),
+            p8=PlayerBaseItem("8_players_table.png"),
+            p9=PlayerBaseItem("9_players_table.png"),
+            p10=PlayerBaseItem("10_players_table.png")
+        ),
         font="medieval.ttf"
     )
 )
