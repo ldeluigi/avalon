@@ -100,13 +100,13 @@ class Skin:
                 tableCenter = (int(tableIm.width / 2.75), int(tableIm.height / 1.83))
                 tableRadius = int(tableIm.width / 3.6)
                 firstAngle = math.pi / 2.8
-                rotated_list = gamestate.players[gamestate.leader:] + gamestate.players[:gamestate.leader]
-                stepAngle = 2 * math.pi / len(rotated_list)
+                player_list = gamestate.players
+                stepAngle = 2 * math.pi / len(player_list)
                 font = ImageFont.truetype(self.get_image(self.font), size=20)
-                for player, index in zip(rotated_list, range(0, len(rotated_list))):
+                for player, index in zip(player_list, range(0, len(player_list))):
                     xOffset = tableRadius * math.cos(firstAngle - index * stepAngle)
                     yOffset = -(tableRadius * math.sin(firstAngle - index * stepAngle))
-                    if (index == 0):
+                    if (index == gamestate.leader):
                         fillColor = ImageColor.getrgb("yellow")
                     else:
                         fillColor = ImageColor.getrgb("black")
@@ -154,6 +154,31 @@ class Skin:
                 arr.seek(0)
                 return discord.File(arr, "table.png")
         await channel.send(file=await get_event_loop().run_in_executor(None, _make_table))
+    async def get_votes_file(self, channel, success_votes:int, fail_votes:int):
+        def _make_votes():
+            with Image.open(self.get_image(self.success_choice)) as successIm, \
+                Image.open(self.get_image(self.fail_choice)) as failIm:
+                total_votes = success_votes + fail_votes
+                total_width = success_votes * successIm.width + fail_votes * failIm.width + max(0, (10 - total_votes) * successIm.width)
+                total_height = max(successIm.height, failIm.height)
+                vote_list = [True] * success_votes + [False] * fail_votes
+                random.shuffle(vote_list)
+                newIm = Image.new("RGBA", (total_width, total_height))
+                current_width = 0
+                for vote, index in zip(vote_list, range(total_votes)):
+                    if vote:
+                        newIm.alpha_composite(successIm, dest=(current_width, 0))
+                        current_width += successIm.width
+                    else:
+                        newIm.alpha_composite(failIm, dest=(current_width, 0))
+                        current_width += failIm.width
+                arr = io.BytesIO()
+                newIm.save(arr, format='PNG')
+                arr.seek(0)
+                return discord.File(arr, "votes.png")
+        return await get_event_loop().run_in_executor(None, _make_votes)
+
+
 
 
 Skins = dict(

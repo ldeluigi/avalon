@@ -52,6 +52,10 @@ def add_channel_check(check, channel):
 def setup_game(num_players):
 	if num_players == 1:
 		return [Quest(1) for n in range(5)], MINIONS[:1]
+	if num_players == 2:
+		return [Quest(2) for n in range(5)], MINIONS[:1] + SERVANTS[:1]
+	if num_players == 3:
+		return [Quest(2) for n in range(5)], MINIONS[:1] + SERVANTS[:2]
 	if num_players < 5 or num_players > 10:
 		return None, None
 	adventurers = ([2, 3, 2, 3, 3] if num_players == 5
@@ -230,7 +234,7 @@ async def quest(client, message, gamestate):
 		party_ptn = RE_PARTY_QUEST_NAMES if gamestate.quest_selection else RE_PARTY_NAMES
 		party_match = party_ptn.fullmatch(votetrigger.content)
 		if party_match and votetrigger.author == gamestate.players[gamestate.leader].user:
-			await message.channel.send(partyStr)
+			#await message.channel.send(partyStr)
 			if gamestate.quest_selection:
 				quest_num = int(party_match.group(1))
 				if not 1 <= quest_num <= len(gamestate.quests):
@@ -259,7 +263,7 @@ async def quest(client, message, gamestate):
 			if valid:
 				if len(party_ids) == quest.adventurers:
 					await confirm(votetrigger)
-					await message.channel.send("Valid request submitted.")
+					#await message.channel.send("Valid request submitted.")
 					gamestate.current_party = [gamestate.players_by_duid[i] for i in party_ids]
 					gamestate.phase = Phase.TEAMVOTE
 				else:
@@ -291,7 +295,7 @@ async def teamvote(client, message, gamestate):
 		stop = False
 		vc=0
 		rejectcounter=0
-		voteStr="\n**Team Vote Results**:\n"
+		voteStr="\n```fix\nTeam Vote Results```\n"
 		voters = [p.user for p in gamestate.players]
 		num_voters = len(voters)
 		# del voters[leader]   # enable to exclude leader from voting
@@ -304,14 +308,14 @@ async def teamvote(client, message, gamestate):
 				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "
 				if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
-					voteStr += "⚔️ "
+					voteStr += "🏆 "
 				voteStr += pmtrigger.author.name+" voted **approve**.\n"
 				voters.remove(pmtrigger.author)
 			elif pmtrigger.content == "!reject":
 				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "
 				if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
-					voteStr += "⚔️ "
+					voteStr += "🏆 "
 				voteStr += pmtrigger.author.name+" voted **reject**.\n"
 				rejectcounter += 1
 				voters.remove(pmtrigger.author)
@@ -396,10 +400,11 @@ async def privatevote(client, message, gamestate):
 		quest = gamestate.quests[gamestate.current_quest-1]
 		if fails >= quest.required_fails:
 			quest.winning_team = Team.EVIL
-			await message.channel.send("\nQuest **failed**. `"+str(fails)+"` adventurer(s) failed to complete their task.\n")
+			resultText = "\nQuest **failed**. `"+str(fails)+"` adventurer(s) failed to complete their task.\n"
 		else:
 			quest.winning_team = Team.GOOD
-			await message.channel.send("\nQuest **succeeded**. `"+str(fails)+"` adventurer(s) failed to complete their task.\n")
+			resultText = "\nQuest **succeeded**. `"+str(fails)+"` adventurer(s) failed to complete their task.\n"
+		await message.channel.send(resultText, file=await gamestate.skin.get_votes_file(message.channel, votecount - fails, fails))
 
 		if not gamestate.quest_selection:
 			gamestate.current_quest += 1
