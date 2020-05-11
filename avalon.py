@@ -50,12 +50,16 @@ def add_channel_check(check, channel):
 	return _check
 
 def setup_game(num_players):
+	# Begin of test case scenarios
 	if num_players == 1:
 		return [Quest(1) for n in range(5)], MINIONS[:1]
 	if num_players == 2:
 		return [Quest(2) for n in range(5)], MINIONS[:1] + SERVANTS[:1]
 	if num_players == 3:
 		return [Quest(2) for n in range(5)], MINIONS[:1] + SERVANTS[:2]
+	if num_players == 4:
+		return [Quest(2) for n in range(5)], MINIONS[:2] + SERVANTS[:2]
+	# End of test case scenarios
 	if num_players < 5 or num_players > 10:
 		return None, None
 	adventurers = ([2, 3, 2, 3, 3] if num_players == 5
@@ -284,7 +288,6 @@ async def teamvote(client, message, gamestate):
 		if isinstance(msg.channel, DMChannel):
 			if msg.author in voters:
 				if msg.content == "!approve" or msg.content == "!reject":
-					#voters.remove(msg.author)
 					return True
 		elif msg.content.startswith('!stop'):
 			return True
