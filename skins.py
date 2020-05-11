@@ -32,11 +32,11 @@ class Skin:
     assassin: str
     background: str
     board: PlayerBase
-    evil_servants: Tuple[str]
+    evil_servants: List[str]
     fail_choice: str
     fail_mark: str
     logo: str
-    loyal_servants: Tuple[str]
+    loyal_servants: List[str]
     merlin: str
     mordred: str
     morgana: str
@@ -82,7 +82,7 @@ class Skin:
                         Image.open(self.get_image(self.fail_mark)) \
                             .resize((circleWidth, circleWidth)) as failIm:
                         for quest, index in zip(gamestate.quests, range(0, len(gamestate.quests))):
-                            pos = (int(boardIm.width / 26 + index * (boardIm.width / 34 + circleWidth)),
+                            pos = (int(boardIm.width / 27 + index * (boardIm.width / 34 + circleWidth)),
                              int(boardIm.height / 2.47))
                             if (quest.winning_team is Team.GOOD):
                                 boardIm.alpha_composite(successIm, dest=pos)
@@ -205,11 +205,11 @@ Skins = dict(
             p9=PlayerBaseItem("9_players_board.png"),
             p10=PlayerBaseItem("10_players_board.png")
         ),
-        evil_servants=("evil_servant.png",),
+        evil_servants=["evil_servant.png"],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
         logo="logo.png",
-        loyal_servants=("loyal_servant.png",),
+        loyal_servants=["loyal_servant.png"],
         merlin="merlin.png",
         mordred="mordred.png",
         morgana="morgana.png",
@@ -228,6 +228,42 @@ Skins = dict(
             p10=PlayerBaseItem("10_players_table.png")
         ),
         font="medieval.ttf"
+    ),
+    STARWARS = Skin(
+        path="starwars",
+        assassin="boba_fett_assassin.png",
+        background="stars_bg.jpg",
+        board=PlayerBase(
+            p5=PlayerBaseItem("5_players_board.png"),
+            p6=PlayerBaseItem("6_players_board.png"),
+            p7=PlayerBaseItem("7_players_board.png"),
+            p8=PlayerBaseItem("8_players_board.png"),
+            p9=PlayerBaseItem("9_players_board.png"),
+            p10=PlayerBaseItem("10_players_board.png")
+        ),
+        evil_servants=["trooper_evil.png"],
+        fail_choice="fail_choose_card.png",
+        fail_mark="fail_mark.png",
+        logo="logo.png",
+        loyal_servants=["ally_0.png", "ally_1.png", "ally_2.png", "ally_3.png", "ally_4.png", "ally_5.png"],
+        merlin="obiwan.png",
+        mordred="palpatine.png",
+        morgana="dartfener.png",
+        oberon="jabba.png",
+        percival="luke.png",
+        reject_mark="reject_mark.png",
+        role_back="role_back.png",
+        success_choice="success_choose_card.png",
+        success_mark="success_mark.png",
+        table=PlayerBase(
+            p5=PlayerBaseItem("5_players_table.png"),
+            p6=PlayerBaseItem("6_players_table.png"),
+            p7=PlayerBaseItem("7_players_table.png"),
+            p8=PlayerBaseItem("8_players_table.png"),
+            p9=PlayerBaseItem("9_players_table.png"),
+            p10=PlayerBaseItem("10_players_table.png")
+        ),
+        font="starjedi.ttf"
     )
 )
 
