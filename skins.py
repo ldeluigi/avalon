@@ -127,11 +127,11 @@ class Skin:
                 roles_list.sort(key=lambda role: role.name)
                 role_height = int(tableIm.height / len(roles_list))
 
-                def get_image_for_role(role):
+                def get_image_for_role(role: Role):
                     if role in SERVANTS:
-                        return Image.open(self.get_image(random.choice(self.loyal_servants)))
+                        return Image.open(self.get_image(self.loyal_servants[hash(role.name)%len(self.loyal_servants)]))
                     elif role in MINIONS:
-                        return Image.open(self.get_image(random.choice(self.evil_servants)))
+                        return Image.open(self.get_image(self.evil_servants[hash(role.name)%len(self.evil_servants)]))
                     elif role is MERLIN:
                         return Image.open(self.get_image(self.merlin))
                     elif role is PERCIVAL:
@@ -176,7 +176,7 @@ class Skin:
                 random.shuffle(vote_list)
                 newIm = Image.new("RGBA", (total_width, total_height))
                 current_width = 0
-                for vote, index in zip(vote_list, range(total_votes)):
+                for vote in vote_list:
                     if vote:
                         newIm.alpha_composite(successIm, dest=(current_width, 0))
                         current_width += successIm.width
