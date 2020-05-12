@@ -4,7 +4,7 @@ import random
 import re
 import shelve
 from datetime import datetime
-from random import randint, shuffle
+from random import randrange, shuffle
 from dataclasses import dataclass, field
 from typing import List, Mapping
 
@@ -156,7 +156,9 @@ async def login(client, message, gamestate):
 			shuffle(chars_list)
 			roles_str = "\n".join(":black_small_square: {}".format(r) for r in chars_list)
 			await message.channel.send(startStr.format(players_str, len(gamestate.players), good_count, evil_count, roles_str))
-			gamestate.leader = randint(0,len(gamestate.players)-1)	#leadercounter
+			gamestate.leader = 0 # leader will be in first seat
+			leader_rotation = randrange(len(gamestate.players))	# leadercounter
+			gamestate.players = gamestate.players[leader_rotation:] + gamestate.players[:leader_rotation]
 			gamestate.phase = Phase.NIGHT
 		if reply.content == "!stop":
 			await confirm(reply)
