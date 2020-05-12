@@ -5,14 +5,25 @@ import re
 import shelve
 from datetime import datetime
 from random import randint, shuffle
+from dataclasses import dataclass, field
+from typing import List, Mapping
 
 import discord
 from discord import DMChannel
 
-from model import *
+from model import Team, Phase, Role, Quest, Player
 from skins import Skin, Skins
 from text import *
 
+
+SERVANT = Role(Team.GOOD, "servant")
+MINION = Role(Team.EVIL, "minion",)
+MERLIN = Role(Team.GOOD, "merlin")
+PERCIVAL = Role(Team.GOOD, "percival")
+ASSASSIN = Role(Team.EVIL, "assassin")
+MORGANA = Role(Team.EVIL, "morgana")
+MORDRED = Role(Team.EVIL, "mordred")
+OBERON = Role(Team.EVIL, "oberon")
 
 @dataclass
 class GameState:
@@ -52,13 +63,13 @@ def add_channel_check(check, channel):
 def setup_game(num_players):
 	# Begin of test case scenarios
 	if num_players == 1:
-		return [Quest(1) for n in range(5)], MINIONS[:1]
+		return [Quest(1) for n in range(5)], [MINION]
 	if num_players == 2:
-		return [Quest(2) for n in range(5)], MINIONS[:1] + SERVANTS[:1]
+		return [Quest(2) for n in range(5)], [MINION, SERVANT]
 	if num_players == 3:
-		return [Quest(2) for n in range(5)], MINIONS[:1] + SERVANTS[:2]
+		return [Quest(2) for n in range(5)], [MINION] + 2 * [SERVANT]
 	if num_players == 4:
-		return [Quest(2) for n in range(5)], MINIONS[:2] + SERVANTS[:2]
+		return [Quest(2) for n in range(5)], 2 * [MINION] + 2 * [SERVANT]
 	# End of test case scenarios
 	if num_players < 5 or num_players > 10:
 		return None, None
@@ -70,17 +81,17 @@ def setup_game(num_players):
 	if num_players >= 7:
 		quests[3].required_fails = 2
 	if num_players == 5:
-		roles = SERVANTS[:1] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+		roles = [SERVANT, MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	elif num_players == 6:
-		roles = SERVANTS[:2] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+		roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	elif num_players == 7:
-		roles = SERVANTS[:2] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, OBERON]
+		roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, OBERON]
 	elif num_players == 8:
-		roles = SERVANTS[:3] + MINIONS[:1] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+		roles = 3 * [SERVANT] + [MINION, MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	elif num_players == 9:
-		roles = SERVANTS[:4] + [MERLIN, PERCIVAL, ASSASSIN, MORDRED, MORGANA]
+		roles = 4 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORDRED, MORGANA]
 	elif num_players == 10:
-		roles = SERVANTS[:4] + MINIONS[:2] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+		roles = 4 * [SERVANT] + 2 * [MINION] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	return quests, roles
 
 async def avalon(client, message):			#main loop
@@ -134,14 +145,17 @@ async def login(client, message, gamestate):
 				await message.channel.send("Rule Loading Error!")
 				continue
 			players_str = ", ".join(p.name for p in gamestate.players)
-			roles_str = "\n".join(":black_small_square: {}".format(r.name) for r in roles_list)
 			evil_count = sum(r.is_evil for r in roles_list)
 			good_count = len(gamestate.players) - evil_count
-			await message.channel.send(startStr.format(players_str, len(gamestate.players), good_count, evil_count, roles_str))
 			random.seed(datetime.now())
 			shuffle(roles_list)
 			for player, role in zip(gamestate.players, roles_list):
 				player.role = role
+			gamestate.skin.assign_characters(gamestate.players)
+			chars_list = [p.char.name for p in gamestate.players]
+			shuffle(chars_list)
+			roles_str = "\n".join(":black_small_square: {}".format(r) for r in chars_list)
+			await message.channel.send(startStr.format(players_str, len(gamestate.players), good_count, evil_count, roles_str))
 			gamestate.leader = randint(0,len(gamestate.players)-1)	#leadercounter
 			gamestate.phase = Phase.NIGHT
 		if reply.content == "!stop":
@@ -152,9 +166,9 @@ async def login(client, message, gamestate):
 async def night(client, message, gamestate):
 	await message.channel.send(nightStr)
 	# evil players seen by each other
-	evillist = [p for p in gamestate.players if p.role.is_evil and p.role != OBERON]
+	evillist = [p for p in gamestate.players if p.role.is_evil and p.role is not OBERON]
 	# evil players seen by Merlin (exclude Mordred)
-	merlinlist = [p for p in gamestate.players if p.role.is_evil and p.role != MORDRED]
+	merlinlist = [p for p in gamestate.players if p.role.is_evil and p.role is not MORDRED]
 	# players seen by Percival
 	percivallist = [p for p in gamestate.players if p.role in [MERLIN, MORGANA]]
 
@@ -166,31 +180,24 @@ async def night(client, message, gamestate):
 		return "\n".join(":black_small_square: {}".format(p.name) for p in players)
 
 	for player in gamestate.players:
-		#print(str(player.name)+" is "+role.name)	#Cheat code to reveal all roles for debugging purposes
-		if player.role in SERVANTS:
-			await player.user.send(loyalDM.format(player.name, player.role.name),
-			file=gamestate.skin.get_image_file(random.choice(gamestate.skin.loyal_servants)))
-		if player.role in MINIONS:
-			await player.user.send(minionDM.format(player.name, player.role.name, toString(evillist)),
-			file=gamestate.skin.get_image_file(random.choice(gamestate.skin.evil_servants)))
-		if player.role == MERLIN:
-			await player.user.send(merlinDM.format(player.name, player.role.name, toString(merlinlist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.merlin))
-		if player.role == ASSASSIN:
-			await player.user.send(assassinDM.format(player.name, player.role.name, toString(evillist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.assassin))
-		if player.role == MORDRED:
-			await player.user.send(mordredDM.format(player.name, player.role.name, toString(evillist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.mordred))
-		if player.role == MORGANA:
-			await player.user.send(morganaDM.format(player.name, player.role.name, toString(evillist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.morgana))
-		if player.role == PERCIVAL:
-			await player.user.send(percivalDM.format(player.name, player.role.name, toString(percivallist)),
-			file=gamestate.skin.get_image_file(gamestate.skin.percival))
-		if player.role == OBERON:
-			await player.user.send(oberonDM.format(player.name, player.role.name),
-			file=gamestate.skin.get_image_file(gamestate.skin.oberon))
+		#print(str(player.name)+" is "+player.char.name)	#Cheat code to reveal all roles for debugging purposes
+		if player.role is SERVANT:
+			secret = loyalDM.format(player.name, player.char.name)
+		if player.role is MINION:
+			secret = minionDM.format(player.name, player.char.name, toString(evillist))
+		if player.role is MERLIN:
+			secret = merlinDM.format(player.name, player.char.name, toString(merlinlist))
+		if player.role is ASSASSIN:
+			secret = assassinDM.format(player.name, player.char.name, toString(evillist))
+		if player.role is MORDRED:
+			secret = mordredDM.format(player.name, player.char.name, toString(evillist))
+		if player.role is MORGANA:
+			secret = morganaDM.format(player.name, player.char.name, toString(evillist))
+		if player.role is PERCIVAL:
+			secret = percivalDM.format(player.name, player.char.name, toString(percivallist))
+		if player.role is OBERON:
+			secret = oberonDM.format(player.name, player.char.name)
+		await player.user.send(secret, file=gamestate.skin.get_image_file(player.char.image_path))
 	await message.channel.send(night2Str)
 	gamestate.phase = Phase.QUEST
 
@@ -451,7 +458,7 @@ async def gameover(client, message, gamestate):
 	for player in gamestate.players:
 		if player.role.team is winning_team:
 			await addscore(client, message, player.user)
-	roles_str = "\n".join("{} is **{}**".format(player.name, player.role.name)
+	roles_str = "\n".join("{} is **{}**".format(player.name, player.char.name)
 			for player in gamestate.players)
 	#roles_str += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
 	await message.channel.send(roles_str)

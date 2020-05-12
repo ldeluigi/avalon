@@ -1,6 +1,6 @@
 import discord
 from enum import Enum
-from typing import List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 from dataclasses import dataclass, field
 
 class Team(Enum):
@@ -20,7 +20,7 @@ class Phase(Enum):
 class Role:
 	"""A role used in the game."""
 	team: Team   # team, either GOOD (loyal servants) or EVIL (traitors)
-	name: str    # full displayed name of the role
+	key: str     # ID string for the role type
 	@property
 	def is_good(self):
 		return self.team is Team.GOOD
@@ -35,20 +35,8 @@ class Quest:
 	winning_team: Optional[Team] = None   # outcome of quest, initially None
 
 @dataclass
-class Player:
-	name: str                     # displayed name of player
-	user: discord.abc.User        # reference to Discord user
-	role: Optional[Role] = None   # player's role (set when game starts)
-
-
-
-SERVANTS = [Role(Team.GOOD, "{}, Loyal Servant of Arthur".format(name))
-            for name in ["Galahad", "Tristan", "Guinevere", "Lamorak"]]
-MINIONS = [Role(Team.EVIL, "{}, Minion of Mordred".format(name))
-           for name in ["Agravain", "Gareth"]]
-MERLIN = Role(Team.GOOD, "Merlin")
-PERCIVAL = Role(Team.GOOD, "Percival")
-ASSASSIN = Role(Team.EVIL, "The Assassin")
-MORGANA = Role(Team.EVIL, "Morgana")
-MORDRED = Role(Team.EVIL, "Mordred")
-OBERON = Role(Team.EVIL, "Oberon")
+class Player:   # (Optional fields are set at game start)
+	name: str                         # displayed name of player
+	user: discord.abc.User            # reference to Discord user
+	role: Optional[Role] = None       # player's role
+	char: Optional[Any] = None        # player's skin-dependent character
