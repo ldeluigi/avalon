@@ -64,13 +64,13 @@ def add_channel_check(check, channel):
 def setup_game(num_players):
 	# Begin of test case scenarios
 	if num_players == 1:
-		return [Quest(1) for n in range(5)], [MINION]
+		return [Quest(1) for n in range(5)], [ASSASSIN]
 	if num_players == 2:
-		return [Quest(2) for n in range(5)], [MINION, SERVANT]
+		return [Quest(2) for n in range(5)], [ASSASSIN, MERLIN]
 	if num_players == 3:
-		return [Quest(2) for n in range(5)], [MINION] + 2 * [SERVANT]
+		return [Quest(2) for n in range(5)], [ASSASSIN] +[SERVANT, MERLIN]
 	if num_players == 4:
-		return [Quest(2) for n in range(5)], 2 * [MINION] + 2 * [SERVANT]
+		return [Quest(2) for n in range(5)], [MINION, ASSASSIN] + [SERVANT, MERLIN]
 	# End of test case scenarios
 	if num_players < 5 or num_players > 10:
 		return None, None
@@ -100,11 +100,12 @@ async def avalon(client, message):			#main loop
 	await gamestate.skin.send_image(gamestate.skin.logo, message.channel)
 	if gamestate.phase == Phase.INIT: await login(client, message, gamestate)
 	if gamestate.phase == Phase.NIGHT: await night(client, message, gamestate)
-	while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE):
-		if gamestate.phase == Phase.QUEST: await quest(client, message, gamestate)
-		if gamestate.phase == Phase.TEAMVOTE: await teamvote(client, message, gamestate)
-		if gamestate.phase == Phase.PRIVATEVOTE: await privatevote(client, message, gamestate)
-	if gamestate.phase == Phase.GAMEOVER: await gameover(client, message, gamestate)
+	#while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE):
+	#	if gamestate.phase == Phase.QUEST: await quest(client, message, gamestate)
+	#	if gamestate.phase == Phase.TEAMVOTE: await teamvote(client, message, gamestate)
+	#	if gamestate.phase == Phase.PRIVATEVOTE: await privatevote(client, message, gamestate)
+	#if gamestate.phase == Phase.GAMEOVER: 
+	await gameover(client, message, gamestate)
 
 async def login(client, message, gamestate):
 	#Login Phase
@@ -163,7 +164,7 @@ async def login(client, message, gamestate):
 			gamestate.phase = Phase.NIGHT
 		if reply.content == "!stop":
 			await confirm(reply)
-			await message.channel.send(stopStr)
+			await message.channel.send(gamestate.t.stopStr)
 			gamestate.phase = Phase.INIT
 
 async def night(client, message, gamestate):
@@ -437,9 +438,9 @@ async def gameover(client, message, gamestate):
 		elif msg.content.startswith('!stop'):
 			return True
 		return False
-	await message.channel.send(gameoverStr)
-	if gamestate.succeeded_quests == 3:
-		await message.channel.send(gamestate.t.assassinatePrompt(assassin.name))
+	if gamestate.succeeded_quests == 3 or True:
+		evil_team = ", ".join(player.name for player in gamestate.players if player.role.is_evil)
+		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.name) + gamestate.t.evilTeamReveal + evil_team)
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
 			await confirm(ass)
@@ -451,10 +452,10 @@ async def gameover(client, message, gamestate):
 				await message.channel.send(gamestate.t.assassinateFailed)
 				winning_team = Team.GOOD
 	elif gamestate.failed_quests == 3:
-		await message.channel.send(gamestate.t.evilWinsByQuests)
+		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.evilWinsByQuests)
 		winning_team = Team.EVIL
 	else:
-		await message.channel.send(gamestate.t.evilWinsByFailure)
+		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.evilWinsByFailure)
 		winning_team = Team.EVIL
 	for player in gamestate.players:
 		if player.role.team is winning_team:
@@ -463,7 +464,7 @@ async def gameover(client, message, gamestate):
 			for player in gamestate.players)
 	#roles_str += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
 	await message.channel.send(roles_str)
-	await message.channel.send(stopStr)
+	await message.channel.send(gamestate.t.stopStr)
 	gamestate.phase = Phase.INIT
 
 async def addscore(client, message, user):
