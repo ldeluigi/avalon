@@ -45,8 +45,6 @@ class GameState:
 	def failed_quests(self):
 		return sum(quest.winning_team is Team.EVIL for quest in self.quests)
 
-BOARD_SYMBOLS = {None: ":red_circle:", Team.GOOD: ":o:", Team.EVIL: ":no_entry_sign:"}
-BOARD_CHARS = {None: " ", Team.GOOD: "O", Team.EVIL: "X"}
 
 RE_PARTY_NAMES = re.compile(r"!party\s+.+")
 RE_PARTY_QUEST_NAMES = re.compile(r"!party\s+(\d+)\s+.+")
@@ -60,6 +58,8 @@ def add_channel_check(check, channel):
 	def _check(m):
 		return channel_check(channel)(m) and check(m)
 	return _check
+
+
 
 def setup_game(num_players):
 	# Begin of test case scenarios
@@ -100,12 +100,11 @@ async def avalon(client, message):			#main loop
 	await gamestate.skin.send_image(gamestate.skin.logo, message.channel)
 	if gamestate.phase == Phase.INIT: await login(client, message, gamestate)
 	if gamestate.phase == Phase.NIGHT: await night(client, message, gamestate)
-	#while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE):
-	#	if gamestate.phase == Phase.QUEST: await quest(client, message, gamestate)
-	#	if gamestate.phase == Phase.TEAMVOTE: await teamvote(client, message, gamestate)
-	#	if gamestate.phase == Phase.PRIVATEVOTE: await privatevote(client, message, gamestate)
-	#if gamestate.phase == Phase.GAMEOVER: 
-	await gameover(client, message, gamestate)
+	while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE):
+		if gamestate.phase == Phase.QUEST: await quest(client, message, gamestate)
+		if gamestate.phase == Phase.TEAMVOTE: await teamvote(client, message, gamestate)
+		if gamestate.phase == Phase.PRIVATEVOTE: await privatevote(client, message, gamestate)
+	if gamestate.phase == Phase.GAMEOVER: await gameover(client, message, gamestate)
 
 async def login(client, message, gamestate):
 	#Login Phase
@@ -122,12 +121,6 @@ async def login(client, message, gamestate):
 				gamestate.players_by_duid[reply.author.id] = player
 				if len(gamestate.players) == 5:
 					await message.channel.send(gamestate.t.fiveStr(reply.author.mention))
-				"""
-				## TEST DATA ##
-				for i in range(1, 10):
-					bot = Player("Bot {}".format(i), reply.author)
-					gamestate.players.append(bot)
-				"""
 			else:
 				await deny(reply)
 				await message.channel.send(gamestate.t.alreadyJoinedStr(reply.author.mention))
@@ -135,9 +128,6 @@ async def login(client, message, gamestate):
 			await deny(reply)
 			await message.channel.send(gamestate.t.gameFullStr)
 		if reply.content == "!start" and len(gamestate.players) < 5:
-			## TEST DATA ##
-			#bot1 = Player("Bot 1", reply.author)
-			#gamestate.players.append(bot1)
 			await deny(reply)
 			await message.channel.send(gamestate.t.notEnoughPlayers)
 		if (reply.content == "!start" and len(gamestate.players) >= 5) or reply.content == "!teststart":
@@ -217,30 +207,12 @@ async def quest(client, message, gamestate):
 	playersnamestring = "|"
 	for x in gamestate.players:
 		playersnamestring += "` "+x.name+" `|"
-	"""
-	boardstatestring = " ".join(BOARD_SYMBOLS[quest.winning_team] for quest in gamestate.quests)
-	"""
 	if gamestate.quest_selection:
-		"""
-		board_num = "  ".join(map(str, range(1, len(gamestate.quests)+1)))
-		board_advs = "  ".join(str(q.adventurers) for q in gamestate.quests)
-		board_fails = "  ".join(str(q.required_fails) if q.required_fails > 1 else " " for q in gamestate.quests)
-		board_result = "  ".join(BOARD_CHARS[q.winning_team] for q in gamestate.quests)
-		await message.channel.send(teamStrQuestSel.format(
-			playersnamestring, gamestate.players[gamestate.leader].user.mention,
-			board_num, board_advs, board_fails, board_result))
-		"""
 		await gamestate.skin.send_table(gamestate, message.channel)
 		await gamestate.skin.send_board(gamestate, message.channel)
 		await message.channel.send(gamestate.t.teamReminderQuestSel)
 	else:
 		quest = gamestate.quests[gamestate.current_quest-1]
-		"""
-		await message.channel.send(teamStr.format(
-			playersnamestring, gamestate.players[gamestate.leader].user.mention,
-			gamestate.current_quest, quest.adventurers, quest.required_fails,
-			boardstatestring, quest.adventurers))
-		"""
 		await gamestate.skin.send_table(gamestate, message.channel)
 		await gamestate.skin.send_board(gamestate, message.channel)
 		await message.channel.send(gamestate.t.teamReminder(quest.adventurers))
@@ -249,7 +221,6 @@ async def quest(client, message, gamestate):
 		party_ptn = RE_PARTY_QUEST_NAMES if gamestate.quest_selection else RE_PARTY_NAMES
 		party_match = party_ptn.fullmatch(votetrigger.content)
 		if party_match and votetrigger.author == gamestate.players[gamestate.leader].user:
-			#await message.channel.send(partyStr)
 			if gamestate.quest_selection:
 				quest_num = int(party_match.group(1))
 				if not 1 <= quest_num <= len(gamestate.quests):
@@ -278,7 +249,6 @@ async def quest(client, message, gamestate):
 			if valid:
 				if len(party_ids) == quest.adventurers:
 					await confirm(votetrigger)
-					#await message.channel.send("Valid request submitted.")
 					gamestate.current_party = [gamestate.players_by_duid[i] for i in party_ids]
 					gamestate.phase = Phase.TEAMVOTE
 				else:
@@ -294,13 +264,13 @@ async def quest(client, message, gamestate):
 			await message.channel.send(gamestate.t.malformedQuestSel(len(gamestate.quests)))
 
 async def teamvote(client, message, gamestate):
-	await message.channel.send(gamestate.t.teamvoteStr(gamestate.team_attempts))
+	await message.channel.send(gamestate.t.teamvoteStr(gamestate.team_attempts, ", ".join(player.name for player in gamestate.current_party)))
 	def votecheck(msg):
 		if isinstance(msg.channel, DMChannel):
 			if msg.author in voters:
 				if msg.content == "!approve" or msg.content == "!reject":
 					return True
-		elif msg.content.startswith('!stop'):
+		elif msg.content == '!stop':
 			return True
 		return False
 
@@ -376,7 +346,7 @@ async def privatevote(client, message, gamestate):
 				elif msg.author in activeplayers:
 					if msg.content == "!success":
 						return True
-			elif msg.content.startswith('!stop'):
+			elif msg.content == '!stop':
 				return True
 			return False
 		stop = False
@@ -435,7 +405,7 @@ async def gameover(client, message, gamestate):
 	def assassincheck(msg):
 		if msg.content.startswith('!assassinate') and msg.author == assassin and len(msg.mentions)==1:
 			return True
-		elif msg.content.startswith('!stop'):
+		elif msg.content == '!stop':
 			return True
 		return False
 	if gamestate.succeeded_quests == 3 or True:
