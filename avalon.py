@@ -418,7 +418,7 @@ async def gameover(client, message, gamestate):
 		elif msg.content == '!stop':
 			return True
 		return False
-	if gamestate.succeeded_quests == 3 or True:
+	if gamestate.succeeded_quests == 3:
 		evil_team = ", ".join(player.name for player in gamestate.players if player.role.is_evil)
 		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.name) + gamestate.t.evilTeamReveal(evil_team))
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
