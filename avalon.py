@@ -95,8 +95,22 @@ def setup_game(num_players):
 		roles = 4 * [SERVANT] + 2 * [MINION] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	return quests, roles
 
+def detect_configuration(command_text:str):
+	command = command_text.lower() + " "
+	skin, strings = Skins["AVALON"], StringSets["avalon-en-base"]
+	if any(f' {x} ' in command for x in ["sw", "starwars", "star wars"]):
+		strings = StringSets["avalon-en-starwars"]
+		skin = Skins["STARWARS"]
+	elif any(f' {x} ' in command for x in ["gs", "guerre stellari"]):
+		strings = StringSets["avalon-it-starwars"]
+		skin = Skins["STARWARS"]
+	elif any(f' {x} ' in command for x in ["it", "ita", "italian", "italiano"]):
+		strings = StringSets["avalon-it-base"]
+	return skin, strings
+
 async def avalon(client, message):			#main loop
 	gamestate = GameState()
+	gamestate.skin, gamestate.t = detect_configuration(message.content)
 	await gamestate.skin.send_image(gamestate.skin.logo, message.channel)
 	if gamestate.phase == Phase.INIT: await login(client, message, gamestate)
 	if gamestate.phase == Phase.NIGHT: await night(client, message, gamestate)
@@ -203,10 +217,6 @@ def mentionToID(a:str):
 	return a
 
 async def quest(client, message, gamestate):
-
-	playersnamestring = "|"
-	for x in gamestate.players:
-		playersnamestring += "` "+x.name+" `|"
 	if gamestate.quest_selection:
 		await gamestate.skin.send_table(gamestate, message.channel)
 		await gamestate.skin.send_board(gamestate, message.channel)
@@ -284,7 +294,7 @@ async def teamvote(client, message, gamestate):
 		num_voters = len(voters)
 		# del voters[leader]   # enable to exclude leader from voting
 		for voter in voters:
-			await voter.send(gamestate.t.privateVoteInfo("Leader " + gamestate.players[gamestate.leader].name, "!approve", "!reject"))
+			await voter.send(gamestate.t.privateVoteInfo(gamestate.t.leaderInvocation(gamestate.players[gamestate.leader].name), "!approve", "!reject"))
 		while voters:
 			vc += 1
 			pmtrigger = await client.wait_for("message", check=votecheck)
@@ -358,7 +368,7 @@ async def privatevote(client, message, gamestate):
 
 		votecount = len(activeplayers)
 		for voter in activeplayers:
-			await voter.send(gamestate.t.privateVoteInfo("Quest", "!success", "!fail"))
+			await voter.send(gamestate.t.privateVoteInfo(gamestate.t.quest, "!success", "!fail"))
 		while activeplayers:
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
@@ -410,7 +420,7 @@ async def gameover(client, message, gamestate):
 		return False
 	if gamestate.succeeded_quests == 3 or True:
 		evil_team = ", ".join(player.name for player in gamestate.players if player.role.is_evil)
-		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.name) + gamestate.t.evilTeamReveal + evil_team)
+		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.name) + gamestate.t.evilTeamReveal(evil_team))
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
 			await confirm(ass)
@@ -430,7 +440,7 @@ async def gameover(client, message, gamestate):
 	for player in gamestate.players:
 		if player.role.team is winning_team:
 			await addscore(client, message, player.user)
-	roles_str = "\n".join("{} is **{}**".format(player.name, player.char.name)
+	roles_str = "\n".join(gamestate.t.roleReveal(player.name, player.char.name)
 			for player in gamestate.players)
 	#roles_str += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
 	await message.channel.send(roles_str)

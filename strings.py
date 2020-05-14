@@ -40,5 +40,5 @@ class StringSet:
 
 StringSets = {
     name: StringSet(text, name + ".ini")
-    for name in ["avalon-en-base"]
+    for name in ["avalon-en-base", "avalon-it-base", "avalon-en-starwars", "avalon-it-starwars"]
 }
