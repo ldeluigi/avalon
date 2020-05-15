@@ -5,6 +5,7 @@ You can host the bot yourself (remember to set the .env var SECRET_TOKEN to your
 or you can add the public instance by clicking on this link:
 
 https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=67632193&scope=bot
+<a href="https://www.statuscake.com" title="Website Uptime Monitoring"><img src="https://app.statuscake.com/button/index.php?Track=K8Ne4neFxb&Days=1&Design=2" /></a>
 
 *Note: permissions listed in the link are all required. Not granting one or more of them could lead to errors.*
 
