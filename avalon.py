@@ -39,7 +39,7 @@ NAME_TO_ROLE = {
 @dataclass
 class GameState:
 	phase: Phase = Phase.INIT    # current game phase
-	quest_selection = True       # whether leader may choose any incomplete quest
+	quest_selection = False      # whether leader may choose any incomplete quest
 	quests: List[Quest] = field(default_factory=list)
 	players: List[Player] = field(default_factory=list)
 	players_by_duid: Mapping[int, Player] = field(default_factory=dict)
@@ -504,8 +504,7 @@ async def gameover(client, message, gamestate):
 			elif msg.content == '!stop':
 				return True
 			return False
-		evil_team = ", ".join(player.name for player in gamestate.players if player.role.is_evil)
-		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.mention) + gamestate.t.evilTeamReveal(evil_team))
+		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.mention))
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
 			await confirm(ass)
