@@ -1,5 +1,6 @@
 # The Resistance: Avalon - github.com/cameronleong - 16/07/16 #
 
+import asyncio
 import random
 import re
 import shelve
@@ -367,10 +368,13 @@ async def teamvote(client, message, gamestate):
 		# del voters[leader]   # enable to exclude leader from voting
 		for voter in voters:
 			await voter.send(gamestate.t.privateVoteInfo(gamestate.t.leaderInvocation(gamestate.players[gamestate.leader].name), "!approve", "!reject"))
+		send_delay_task = None
 		while voters:
 			vc += 1
 			pmtrigger = await client.wait_for("message", check=votecheck)
 			if pmtrigger.content == "!approve":
+				if send_delay_task != None:
+					send_delay_task.cancel()
 				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "
 				if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
@@ -378,6 +382,8 @@ async def teamvote(client, message, gamestate):
 				voteStr += gamestate.t.votedApprove(pmtrigger.author.name)
 				voters.remove(pmtrigger.author)
 			elif pmtrigger.content == "!reject":
+				if send_delay_task != None:
+					send_delay_task.cancel()
 				await confirm(pmtrigger)
 				voteStr += ":black_small_square: "
 				if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
@@ -390,8 +396,9 @@ async def teamvote(client, message, gamestate):
 				stop = True
 				break
 			await message.channel.send(gamestate.t.teamvoteCount(pmtrigger.author.mention, vc, num_voters))
-			if len(voters) == 1:
-				await message.channel.send(f'Just waiting for {voters[0].user.mention}...')
+			if len(voters) > 0:
+				mentions = ', '.join([user.mention for user in voters])
+				send_delay_task = asyncio.create_task(send_after_delay(message.channel, f'Just waiting for {mentions}...'))
 
 		if stop == True:
 			await message.channel.send(gamestate.t.stopStr)
@@ -443,14 +450,19 @@ async def privatevote(client, message, gamestate):
 		votecount = len(activeplayers)
 		for voter in activeplayers:
 			await voter.send(gamestate.t.privateVoteInfo(gamestate.t.quest, "!success", "!fail"))
+		send_delay_task = None
 		while activeplayers:
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
 			if pmtrigger.content == "!success":
+				if send_delay_task != None:
+					send_delay_task.cancel()
 				await confirm(pmtrigger)
 				activeplayers.remove(pmtrigger.author)
 				await gamestate.skin.send_image(gamestate.skin.success_choice, pmtrigger.channel)
 				pass
 			elif pmtrigger.content == "!fail":
+				if send_delay_task != None:
+					send_delay_task.cancel()
 				await confirm(pmtrigger)
 				activeplayers.remove(pmtrigger.author)
 				await gamestate.skin.send_image(gamestate.skin.fail_choice, pmtrigger.channel)
@@ -460,8 +472,9 @@ async def privatevote(client, message, gamestate):
 				stop = True
 				break
 			await message.channel.send(gamestate.t.privatevoteDone(pmtrigger.author.name))
-			if len(activeplayers) == 1:
-				await message.channel.send(f'Just waiting for {activeplayers[0].user.mention}...')
+			if len(activeplayers) > 0:
+				mentions = ', '.join([user.mention for user in activeplayers])
+				send_delay_task = asyncio.create_task(send_after_delay(message.channel, f'Just waiting for {mentions}...'))
 		if stop == True:
 			await message.channel.send(gamestate.t.stopStr)
 			gamestate.phase = Phase.INIT
@@ -483,6 +496,10 @@ async def privatevote(client, message, gamestate):
 			gamestate.phase = Phase.GAMEOVER
 		else:
 			gamestate.phase = Phase.QUEST
+
+async def send_after_delay(channel, message):
+	await asyncio.sleep(20)
+	await channel.send(message)
 
 async def gameover(client, message, gamestate):
 	await gamestate.skin.send_board(gamestate, message.channel)
