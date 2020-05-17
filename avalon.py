@@ -141,13 +141,13 @@ def setup_game(num_players, custom_roles):
 		elif num_players == 6:
 			roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 		elif num_players == 7:
-			roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, OBERON]
+			roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, MORDRED]
 		elif num_players == 8:
-			roles = 3 * [SERVANT] + [MINION, MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+			roles = 3 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, MORDRED]
 		elif num_players == 9:
-			roles = 4 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORDRED, MORGANA]
+			roles = 4 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, MORDRED]
 		elif num_players == 10:
-			roles = 4 * [SERVANT] + 2 * [MINION] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+			roles = 4 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, MORDRED, OBERON]
 	return quests, roles
 
 def detect_configuration(command_text:str):
