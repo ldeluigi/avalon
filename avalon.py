@@ -68,7 +68,7 @@ def setup_game(num_players):
 	if num_players == 2:
 		return [Quest(2) for n in range(5)], [ASSASSIN, MERLIN]
 	if num_players == 3:
-		return [Quest(2) for n in range(5)], [ASSASSIN] +[SERVANT, MERLIN]
+		return [Quest(2) for n in range(5)], [ASSASSIN] + [SERVANT, MERLIN]
 	if num_players == 4:
 		return [Quest(2) for n in range(5)], [MINION, ASSASSIN] + [SERVANT, MERLIN]
 	# End of test case scenarios
@@ -410,22 +410,36 @@ async def privatevote(client, message, gamestate):
 
 async def gameover(client, message, gamestate):
 	await gamestate.skin.send_board(gamestate, message.channel)
-	assassin = next(filter(lambda p: p.role == ASSASSIN, gamestate.players)).user
-	merlin = next(filter(lambda p: p.role == MERLIN, gamestate.players)).user
-	def assassincheck(msg):
-		if msg.content.startswith('!assassinate') and msg.author == assassin and len(msg.mentions)==1:
-			return True
-		elif msg.content == '!stop':
-			return True
-		return False
 	if gamestate.succeeded_quests == 3:
+		merlinPlayer = next(filter(lambda p: p.role == MERLIN, gamestate.players), None)
+		merlin = None
+		if merlinPlayer != None:
+			merlin = merlinPlayer.user
+
+		assassinPlayer = next(filter(lambda p: p.role == ASSASSIN, gamestate.players), None)
+		if assassinPlayer == None:
+			assassinPlayer = next(filter(lambda p: p.role == MORDRED, gamestate.players), None)
+		if assassinPlayer == None:
+			assassinPlayer = next(filter(lambda p: p.role.is_evil, gamestate.players), None)
+		if assassinPlayer == None:
+			await message.channel.send("No minions of Mordred are in this game - loyal knights win!")
+			await message.channel.send(gamestate.t.stopStr)
+			gamestate.phase = Phase.INIT
+			return
+		assassin = assassinPlayer.user
+		def assassincheck(msg):
+			if msg.content.startswith('!assassinate') and msg.author == assassin and len(msg.mentions)==1:
+				return True
+			elif msg.content == '!stop':
+				return True
+			return False
 		evil_team = ", ".join(player.name for player in gamestate.players if player.role.is_evil)
-		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.name) + gamestate.t.evilTeamReveal(evil_team))
+		await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.mention) + gamestate.t.evilTeamReveal(evil_team))
 		ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
 		if ass.content.startswith('!assassinate'):
 			await confirm(ass)
 			killedID = ass.mentions[0].id
-			if merlin.id == killedID:
+			if merlin != None and merlin.id == killedID:
 				await message.channel.send(gamestate.t.assassinateSucceeded)
 				winning_team = Team.EVIL
 			else:
