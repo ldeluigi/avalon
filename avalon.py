@@ -389,6 +389,8 @@ async def teamvote(client, message, gamestate):
 				stop = True
 				break
 			await message.channel.send(gamestate.t.teamvoteCount(pmtrigger.author.mention, vc, num_voters))
+			if len(voters) == 1:
+				await message.channel.send(f'Just waiting for {voters[0].user.mention}...')
 
 		if stop == True:
 			await message.channel.send(gamestate.t.stopStr)
@@ -457,6 +459,8 @@ async def privatevote(client, message, gamestate):
 				stop = True
 				break
 			await message.channel.send(gamestate.t.privatevoteDone(pmtrigger.author.name))
+			if len(activeplayers) == 1:
+				await message.channel.send(f'Just waiting for {activeplayers[0].user.mention}...')
 		if stop == True:
 			await message.channel.send(gamestate.t.stopStr)
 			gamestate.phase = Phase.INIT
