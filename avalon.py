@@ -225,6 +225,7 @@ async def login(client, message, gamestate):
 			evil_count = sum(r.is_evil for r in roles_list)
 			good_count = len(gamestate.players) - evil_count
 			random.seed(datetime.now())
+			shuffle(gamestate.players)
 			shuffle(roles_list)
 			for player, role in zip(gamestate.players, roles_list):
 				player.role = role
