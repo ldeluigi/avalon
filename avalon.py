@@ -449,16 +449,14 @@ async def privatevote(client, message, gamestate):
 		send_delay_task = None
 		while pending_players:
 			pmtrigger = await client.wait_for("message", check=privatevotecheck)
+			if send_delay_task != None:
+				send_delay_task.cancel()
 			if pmtrigger.content == "!success":
-				if send_delay_task != None:
-					send_delay_task.cancel()
 				await confirm(pmtrigger)
 				pending_players.remove(pmtrigger.author)
 				await gamestate.skin.send_image(gamestate.skin.success_choice, pmtrigger.channel)
 				pass
 			elif pmtrigger.content == "!fail":
-				if send_delay_task != None:
-					send_delay_task.cancel()
 				await confirm(pmtrigger)
 				pending_players.remove(pmtrigger.author)
 				await gamestate.skin.send_image(gamestate.skin.fail_choice, pmtrigger.channel)
