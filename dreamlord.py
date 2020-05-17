@@ -16,7 +16,7 @@ load_dotenv()
 
 client = discord.Client()
 busyChannels = []
-game = discord.Game(name="github.com/ldeluigi/avalon", url="github.com/ldeluigi/avalon")
+game = discord.Game(name="github.com/aj-r/avalon", url="github.com/aj-r/avalon")
 
 @client.event
 async def on_message(message):
