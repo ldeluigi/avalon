@@ -25,6 +25,17 @@ MORGANA = Role(Team.EVIL, "morgana")
 MORDRED = Role(Team.EVIL, "mordred")
 OBERON = Role(Team.EVIL, "oberon")
 
+NAME_TO_ROLE = {
+	'servant': SERVANT,
+	'minion': MINION,
+	'merlin': MERLIN,
+	'percival': PERCIVAL,
+	'assassin': ASSASSIN,
+	'morgana': MORGANA,
+	'mordred': MORDRED,
+	'oberon': OBERON,
+}
+
 @dataclass
 class GameState:
 	phase: Phase = Phase.INIT    # current game phase
@@ -61,38 +72,87 @@ def add_channel_check(check, channel):
 
 
 
-def setup_game(num_players):
-	# Begin of test case scenarios
-	if num_players == 1:
-		return [Quest(1) for n in range(5)], [ASSASSIN]
-	if num_players == 2:
-		return [Quest(2) for n in range(5)], [ASSASSIN, MERLIN]
-	if num_players == 3:
-		return [Quest(2) for n in range(5)], [ASSASSIN] + [SERVANT, MERLIN]
-	if num_players == 4:
-		return [Quest(2) for n in range(5)], [MINION, ASSASSIN] + [SERVANT, MERLIN]
-	# End of test case scenarios
-	if num_players < 5 or num_players > 10:
+def setup_game(num_players, custom_roles):
+	print('setup, num_players:' + str(num_players))
+	if num_players < 1 or num_players > 10:
 		return None, None
-	adventurers = ([2, 3, 2, 3, 3] if num_players == 5
-		else [2, 3, 4, 3, 4] if num_players == 6
-		else [2, 3, 3, 4, 4] if num_players == 7
-		else [3, 4, 4, 5, 5])
-	quests = [Quest(n) for n in adventurers]
+
+	if num_players == 1: # Test scenario
+		quests = [Quest(1) for n in range(5)]
+	elif num_players == 2: # Test scenario
+		quests = [Quest(2) for n in range(5)]
+	elif num_players == 3: # Test scenario
+		quests = [Quest(2) for n in range(5)]
+	elif num_players == 4: # Test scenario
+		quests = [Quest(2) for n in range(5)]
+	else:
+		adventurers = ([2, 3, 2, 3, 3] if num_players == 5
+			else [2, 3, 4, 3, 4] if num_players == 6
+			else [2, 3, 3, 4, 4] if num_players == 7
+			else [3, 4, 4, 5, 5])
+		quests = [Quest(n) for n in adventurers]
 	if num_players >= 7:
 		quests[3].required_fails = 2
-	if num_players == 5:
-		roles = [SERVANT, MERLIN, PERCIVAL, ASSASSIN, MORGANA]
-	elif num_players == 6:
-		roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
-	elif num_players == 7:
-		roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, OBERON]
-	elif num_players == 8:
-		roles = 3 * [SERVANT] + [MINION, MERLIN, PERCIVAL, ASSASSIN, MORGANA]
-	elif num_players == 9:
-		roles = 4 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORDRED, MORGANA]
-	elif num_players == 10:
-		roles = 4 * [SERVANT] + 2 * [MINION] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+
+	print(str(quests))
+
+	if len(custom_roles) > 0:
+		if num_players == 4: # Test scenario
+			good_count = 2
+			evil_count = 2
+		if num_players == 5:
+			good_count = 3
+			evil_count = 2
+		elif num_players == 6:
+			good_count = 4
+			evil_count = 2
+		elif num_players == 7:
+			good_count = 4
+			evil_count = 3
+		elif num_players == 8:
+			good_count = 5
+			evil_count = 3
+		elif num_players == 9:
+			good_count = 6
+			evil_count = 3
+		elif num_players == 10:
+			good_count = 6
+			evil_count = 4
+		else: # Test scenario
+			good_count = num_players - 1
+			evil_count = 1
+
+		print(str(good_count) + ',' + str(evil_count))
+
+		good_roles = [role for role in custom_roles if role.is_good][:good_count]
+		while len(good_roles) < good_count:
+			good_roles.append(SERVANT)
+		evil_roles = [role for role in custom_roles if role.is_evil][:evil_count]
+		while len(evil_roles) < evil_count:
+			evil_roles.append(MINION)
+		roles = good_roles + evil_roles
+		print(str(roles))
+	else:
+		if num_players == 1: # Test scenario
+			roles = [ASSASSIN]
+		elif num_players == 2: # Test scenario
+			roles = [ASSASSIN, MERLIN]
+		elif num_players == 3: # Test scenario
+			roles = [ASSASSIN] + [SERVANT, MERLIN]
+		elif num_players == 4: # Test scenario
+			roles = [MINION, ASSASSIN] + [SERVANT, MERLIN]
+		if num_players == 5:
+			roles = [SERVANT, MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+		elif num_players == 6:
+			roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+		elif num_players == 7:
+			roles = 2 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA, OBERON]
+		elif num_players == 8:
+			roles = 3 * [SERVANT] + [MINION, MERLIN, PERCIVAL, ASSASSIN, MORGANA]
+		elif num_players == 9:
+			roles = 4 * [SERVANT] + [MERLIN, PERCIVAL, ASSASSIN, MORDRED, MORGANA]
+		elif num_players == 10:
+			roles = 4 * [SERVANT] + 2 * [MINION] + [MERLIN, PERCIVAL, ASSASSIN, MORGANA]
 	return quests, roles
 
 def detect_configuration(command_text:str):
@@ -124,6 +184,7 @@ async def login(client, message, gamestate):
 	#Login Phase
 	gamestate.phase = Phase.LOGIN
 	await message.channel.send(gamestate.t.loginStr)
+	custom_roles = []
 	while gamestate.phase == Phase.LOGIN:
 		reply = await client.wait_for('message', check=channel_check(message.channel))
 		if reply.content == "!join" and len(gamestate.players) <= 10:
@@ -138,6 +199,22 @@ async def login(client, message, gamestate):
 			else:
 				await deny(reply)
 				await message.channel.send(gamestate.t.alreadyJoinedStr(reply.author.mention))
+		if reply.content.startswith('!roles '):
+			custom_role_names = reply.content.split(' ')[1:]
+			custom_role_names = [name.lower() for name in custom_role_names if name != '']
+			invalid_role_names = [name for name in custom_role_names if not name in NAME_TO_ROLE]
+			if len(invalid_role_names) > 0:
+				await error(reply)
+				await message.channel.send(invalid_role_names[0] + ' is not a valid role.')
+				continue
+
+			await confirm(reply)
+			if not 'merlin' in custom_role_names:
+				custom_role_names.append('merlin')
+				await message.channel.send('Merlin is a required role and was automatically added.')
+			custom_roles = [NAME_TO_ROLE[name] for name in custom_role_names]
+			await message.channel.send('Roles updated!')
+
 		if reply.content == "!join" and len(gamestate.players) > 10:
 			await deny(reply)
 			await message.channel.send(gamestate.t.gameFullStr)
@@ -146,7 +223,7 @@ async def login(client, message, gamestate):
 			await message.channel.send(gamestate.t.notEnoughPlayers)
 		if (reply.content == "!start" and len(gamestate.players) >= 5) or reply.content == "!teststart":
 			await confirm(reply)
-			gamestate.quests, roles_list = setup_game(len(gamestate.players))
+			gamestate.quests, roles_list = setup_game(len(gamestate.players), custom_roles)
 			if roles_list is None:
 				await message.channel.send("Rule Loading Error!")
 				continue
