@@ -73,7 +73,6 @@ def add_channel_check(check, channel):
 
 
 def setup_game(num_players, custom_roles):
-	print('setup, num_players:' + str(num_players))
 	if num_players < 1 or num_players > 10:
 		return None, None
 
@@ -93,8 +92,6 @@ def setup_game(num_players, custom_roles):
 		quests = [Quest(n) for n in adventurers]
 	if num_players >= 7:
 		quests[3].required_fails = 2
-
-	print(str(quests))
 
 	if len(custom_roles) > 0:
 		if num_players == 4: # Test scenario
@@ -122,8 +119,6 @@ def setup_game(num_players, custom_roles):
 			good_count = num_players - 1
 			evil_count = 1
 
-		print(str(good_count) + ',' + str(evil_count))
-
 		good_roles = [role for role in custom_roles if role.is_good][:good_count]
 		while len(good_roles) < good_count:
 			good_roles.append(SERVANT)
@@ -131,7 +126,6 @@ def setup_game(num_players, custom_roles):
 		while len(evil_roles) < evil_count:
 			evil_roles.append(MINION)
 		roles = good_roles + evil_roles
-		print(str(roles))
 	else:
 		if num_players == 1: # Test scenario
 			roles = [ASSASSIN]
