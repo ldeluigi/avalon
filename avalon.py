@@ -372,7 +372,7 @@ async def teamvote(client, message, gamestate):
 		send_delay_task = None
 		with MsgQueue(client=client, check=votecheck) as msgqueue:
 			while pending_voters:
-				pmtrigger = await msgqueue.next()
+				pmtrigger = await msgqueue.nextmsg()
 				if pmtrigger.author in pending_voters:
 					vc += 1
 					pending_voters.remove(pmtrigger.author)
@@ -449,7 +449,7 @@ async def privatevote(client, message, gamestate):
 		send_delay_task = None
 		with MsgQueue(client=client, check=privatevotecheck) as msgqueue:
 			while pending_players:
-				pmtrigger = await msgqueue.next()
+				pmtrigger = await msgqueue.nextmsg()
 				if send_delay_task != None:
 					send_delay_task.cancel()
 				pending_players.remove(pmtrigger.author)
