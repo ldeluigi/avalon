@@ -187,7 +187,7 @@ async def login(client, message, gamestate):
 			if not any(p.user.id == reply.author.id for p in gamestate.players):
 				await confirm(reply)
 				await message.channel.send(gamestate.t.joinStr(reply.author.mention))
-				player = Player(reply.author.name, reply.author)
+				player = Player(reply.author.display_name, reply.author)
 				gamestate.players.append(player)
 				gamestate.players_by_duid[reply.author.id] = player
 				if len(gamestate.players) == 5:
@@ -327,7 +327,7 @@ async def quest(client, message, gamestate):
 					break
 				party_ids.add(user.id)
 				if user.id not in gamestate.players_by_duid.keys():
-					await message.channel.send(gamestate.t.playernotingame(user.name))
+					await message.channel.send(gamestate.t.playernotingame(user.display_name))
 					valid = False
 					break
 			if valid:
@@ -378,25 +378,26 @@ async def teamvote(client, message, gamestate):
 					pending_voters.remove(pmtrigger.author)
 				if send_delay_task != None:
 					send_delay_task.cancel()
+				author_name = gamestate.players_by_duid[pmtrigger.author.id].name
 				if pmtrigger.content == "!approve":
 					await confirm(pmtrigger)
 					voteStr += ":black_small_square: "
 					if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
 						voteStr += "🏆 "
-					voteStr += gamestate.t.votedApprove(pmtrigger.author.name)
+					voteStr += gamestate.t.votedApprove(author_name)
 				elif pmtrigger.content == "!reject":
 					await confirm(pmtrigger)
 					voteStr += ":black_small_square: "
 					if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
 						voteStr += "🏆 "
-					voteStr += gamestate.t.votedReject(pmtrigger.author.name)
+					voteStr += gamestate.t.votedReject(author_name)
 					rejectcounter += 1
 				elif pmtrigger.content == "!stop":
 					await confirm(pmtrigger)
 					await message.channel.send(gamestate.t.stopStr)
 					gamestate.phase = Phase.INIT
 					return
-				await message.channel.send(gamestate.t.teamvoteCount(pmtrigger.author.mention, vc, num_voters))
+				await message.channel.send(gamestate.t.teamvoteCount(author_name, vc, num_voters))
 				if len(pending_voters) > 0:
 					mentions = ', '.join([user.mention for user in pending_voters])
 					send_delay_task = asyncio.create_task(send_after_delay(message.channel, f'Just waiting for {mentions}...'))
@@ -465,7 +466,8 @@ async def privatevote(client, message, gamestate):
 					await message.channel.send(gamestate.t.stopStr)
 					gamestate.phase = Phase.INIT
 					return
-				await message.channel.send(gamestate.t.privatevoteDone(pmtrigger.author.name))
+				author_name = gamestate.players_by_duid[pmtrigger.author.id].name
+				await message.channel.send(gamestate.t.privatevoteDone(author_name))
 				if len(pending_players) > 0:
 					mentions = ", ".join([user.mention for user in pending_players])
 					send_delay_task = asyncio.create_task(send_after_delay(message.channel, f"Just waiting for {mentions}..."))
