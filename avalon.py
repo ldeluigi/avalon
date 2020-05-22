@@ -190,70 +190,71 @@ async def login(client, message, gamestate):
 	gamestate.phase = Phase.LOGIN
 	await message.channel.send(gamestate.t.loginStr)
 	custom_roles = []
-	while gamestate.phase == Phase.LOGIN:
-		reply = await client.wait_for('message', check=channel_check(message.channel))
-		if reply.content == "!join" and len(gamestate.players) <= 10:
-			if not any(p.user.id == reply.author.id for p in gamestate.players):
+	with MsgQueue(client=client, check=channel_check(message.channel)) as msgqueue:
+		while gamestate.phase == Phase.LOGIN:
+			reply = await msgqueue.nextmsg()
+			if reply.content == "!join" and len(gamestate.players) <= 10:
+				if not any(p.user.id == reply.author.id for p in gamestate.players):
+					await confirm(reply)
+					await message.channel.send(gamestate.t.joinStr(reply.author.mention))
+					player = Player(reply.author.display_name, reply.author)
+					gamestate.players.append(player)
+					gamestate.players_by_duid[reply.author.id] = player
+					if len(gamestate.players) == 5:
+						await message.channel.send(gamestate.t.fiveStr(reply.author.mention))
+				else:
+					await deny(reply)
+					await message.channel.send(gamestate.t.alreadyJoinedStr(reply.author.mention))
+			if reply.content.startswith('!roles '):
+				custom_role_names = reply.content.split(' ')[1:]
+				custom_role_names = [name.lower() for name in custom_role_names if name != '']
+				invalid_role_names = [name for name in custom_role_names if not name in NAME_TO_ROLE]
+				if len(invalid_role_names) > 0:
+					await error(reply)
+					await message.channel.send(invalid_role_names[0] + ' is not a valid role.')
+					continue
+
 				await confirm(reply)
-				await message.channel.send(gamestate.t.joinStr(reply.author.mention))
-				player = Player(reply.author.display_name, reply.author)
-				gamestate.players.append(player)
-				gamestate.players_by_duid[reply.author.id] = player
-				if len(gamestate.players) == 5:
-					await message.channel.send(gamestate.t.fiveStr(reply.author.mention))
-			else:
+				if not 'merlin' in custom_role_names:
+					custom_role_names.append('merlin')
+					await message.channel.send('Merlin is a required role and was automatically added.')
+				custom_roles = [NAME_TO_ROLE[name] for name in custom_role_names]
+				await message.channel.send('Roles updated!')
+
+			if reply.content == "!join" and len(gamestate.players) > 10:
 				await deny(reply)
-				await message.channel.send(gamestate.t.alreadyJoinedStr(reply.author.mention))
-		if reply.content.startswith('!roles '):
-			custom_role_names = reply.content.split(' ')[1:]
-			custom_role_names = [name.lower() for name in custom_role_names if name != '']
-			invalid_role_names = [name for name in custom_role_names if not name in NAME_TO_ROLE]
-			if len(invalid_role_names) > 0:
-				await error(reply)
-				await message.channel.send(invalid_role_names[0] + ' is not a valid role.')
-				continue
-
-			await confirm(reply)
-			if not 'merlin' in custom_role_names:
-				custom_role_names.append('merlin')
-				await message.channel.send('Merlin is a required role and was automatically added.')
-			custom_roles = [NAME_TO_ROLE[name] for name in custom_role_names]
-			await message.channel.send('Roles updated!')
-
-		if reply.content == "!join" and len(gamestate.players) > 10:
-			await deny(reply)
-			await message.channel.send(gamestate.t.gameFullStr)
-		if reply.content == "!start" and len(gamestate.players) < 5:
-			await deny(reply)
-			await message.channel.send(gamestate.t.notEnoughPlayers)
-		if (reply.content == "!start" and len(gamestate.players) >= 5) or reply.content == "!teststart":
-			await confirm(reply)
-			gamestate.quests, roles_list = setup_game(len(gamestate.players), custom_roles)
-			if roles_list is None:
-				await message.channel.send("Rule Loading Error!")
-				continue
-			players_str = ", ".join(p.name for p in gamestate.players)
-			evil_count = sum(r.is_evil for r in roles_list)
-			good_count = len(gamestate.players) - evil_count
-			random.seed(datetime.now())
-			shuffle(gamestate.players)
-			shuffle(roles_list)
-			for player, role in zip(gamestate.players, roles_list):
-				player.role = role
-			gamestate.skin.assign_characters(gamestate.players)
-			chars_list = [p.char.name for p in gamestate.players]
-			shuffle(chars_list)
-			roles_str = "\n".join(":black_small_square: {}".format(r) for r in chars_list)
-			await message.channel.send(gamestate.t.startStr(players_str, len(gamestate.players), good_count, evil_count, roles_str))
-			gamestate.leader = 0 # leader will be in first seat
-			leader_rotation = randrange(len(gamestate.players))	# leadercounter
-			gamestate.players = gamestate.players[leader_rotation:] + gamestate.players[:leader_rotation]
-			gamestate.lady_players.append(gamestate.players[-1])
-			gamestate.phase = Phase.NIGHT
-		if reply.content == "!stop":
-			await confirm(reply)
-			await message.channel.send(gamestate.t.stopStr)
-			gamestate.phase = Phase.INIT
+				await message.channel.send(gamestate.t.gameFullStr)
+			if reply.content == "!start" and len(gamestate.players) < 5:
+				await deny(reply)
+				await message.channel.send(gamestate.t.notEnoughPlayers)
+			if (reply.content == "!start" and len(gamestate.players) >= 5) or reply.content == "!teststart":
+				await confirm(reply)
+				gamestate.quests, roles_list = setup_game(len(gamestate.players), custom_roles)
+				if roles_list is None:
+					await message.channel.send("Rule Loading Error!")
+					continue
+				players_str = ", ".join(p.name for p in gamestate.players)
+				evil_count = sum(r.is_evil for r in roles_list)
+				good_count = len(gamestate.players) - evil_count
+				random.seed(datetime.now())
+				shuffle(gamestate.players)
+				shuffle(roles_list)
+				for player, role in zip(gamestate.players, roles_list):
+					player.role = role
+				gamestate.skin.assign_characters(gamestate.players)
+				chars_list = [p.char.name for p in gamestate.players]
+				shuffle(chars_list)
+				roles_str = "\n".join(":black_small_square: {}".format(r) for r in chars_list)
+				await message.channel.send(gamestate.t.startStr(players_str, len(gamestate.players), good_count, evil_count, roles_str))
+				gamestate.leader = 0 # leader will be in first seat
+				leader_rotation = randrange(len(gamestate.players))	# leadercounter
+				gamestate.players = gamestate.players[leader_rotation:] + gamestate.players[:leader_rotation]
+				gamestate.lady_players.append(gamestate.players[-1])
+				gamestate.phase = Phase.NIGHT
+			if reply.content == "!stop":
+				await confirm(reply)
+				await message.channel.send(gamestate.t.stopStr)
+				gamestate.phase = Phase.INIT
 
 async def night(client, message, gamestate):
 	await message.channel.send(gamestate.t.nightStr)
