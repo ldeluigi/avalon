@@ -545,8 +545,10 @@ async def lady(client, message, gamestate):
 		await confirm(lady_message)
 		target_player = gamestate.players_by_duid[target_user.id]
 		if target_player.role.is_good:
+			await gamestate.skin.send_image(gamestate.skin.lady_good, current_lady.user)
 			await current_lady.user.send(f"{target_player.name} is a **loyal knight of Arthur**.")
 		else:
+			await gamestate.skin.send_image(gamestate.skin.lady_evil, current_lady.user)
 			await current_lady.user.send(f"{target_player.name} is a **minion of Mordred**.")
 		await message.channel.send(f"I have whispered {target_player.name}'s loyalty to {current_lady.name}.")
 		gamestate.lady_players.append(target_player)

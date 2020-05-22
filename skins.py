@@ -43,6 +43,8 @@ class Skin:
     evil_servants: List[Character]
     fail_choice: str
     fail_mark: str
+    lady_evil: str
+    lady_good: str
     logo: str
     loyal_servants: List[Character]
     merlin: Character
@@ -224,6 +226,8 @@ Skins = dict(
         ],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
+        lady_evil="lady_evil.png",
+        lady_good="lady_good.png",
         logo="logo.png",
         loyal_servants=[
             Character("Galahad, Loyal Servant of Arthur", "loyal_servant.png"),
@@ -268,6 +272,8 @@ Skins = dict(
         ],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
+        lady_evil="lady_evil.png",
+        lady_good="lady_good.png",
         logo="logo.png",
         loyal_servants=[
             Character("Rebel", "ally_0.png"),
