@@ -215,9 +215,11 @@ async def login(client, message, gamestate):
 					continue
 
 				await confirm(reply)
-				if not 'merlin' in custom_role_names:
-					custom_role_names.append('merlin')
-					await message.channel.send('Merlin is a required role and was automatically added.')
+				if not "merlin" in custom_role_names:
+					custom_role_names.append("merlin")
+					await message.channel.send("Merlin is a required role and was automatically added.")
+				if not "assassin" in custom_role_names:
+					await message.channel.send("Assassin is not present. Invoking house rules - another evil player will gain the assassin's power.")
 				custom_roles = [NAME_TO_ROLE[name] for name in custom_role_names]
 				await message.channel.send('Roles updated!')
 
