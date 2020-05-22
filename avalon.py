@@ -42,6 +42,7 @@ NAME_TO_ROLE = {
 class GameState:
 	phase: Phase = Phase.INIT    # current game phase
 	quest_selection = False      # whether leader may choose any incomplete quest
+	enable_lady = True           # whether lady of the lake is enabled
 	quests: List[Quest] = field(default_factory=list)
 	players: List[Player] = field(default_factory=list)
 	players_by_duid: Mapping[int, Player] = field(default_factory=dict)
@@ -49,6 +50,7 @@ class GameState:
 	current_quest: int = 1       # number of current quest (1-based)
 	team_attempts: int = 5       # remaining attempts to form team (incl. current one)
 	current_party: List[Player] = field(default_factory=list)
+	lady_players: List[Player] = field(default_factory=list) # past and current lady of the lake
 	skin: Skin = Skins["AVALON"]
 	t: StringSet = StringSets["avalon-en-base"]
 	@property
@@ -57,6 +59,12 @@ class GameState:
 	@property
 	def failed_quests(self):
 		return sum(quest.winning_team is Team.EVIL for quest in self.quests)
+	@property
+	def completed_quests(self):
+		return sum(quest.winning_team is not None for quest in self.quests)
+	@property
+	def current_lady(self):
+		return self.lady_players[-1]
 
 
 RE_PARTY_NAMES = re.compile(r"!party\s+.+")
@@ -170,10 +178,11 @@ async def avalon(client, message):			#main loop
 	await gamestate.skin.send_image(gamestate.skin.logo, message.channel)
 	if gamestate.phase == Phase.INIT: await login(client, message, gamestate)
 	if gamestate.phase == Phase.NIGHT: await night(client, message, gamestate)
-	while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE):
+	while gamestate.phase in (Phase.QUEST, Phase.TEAMVOTE, Phase.PRIVATEVOTE, Phase.LADY):
 		if gamestate.phase == Phase.QUEST: await quest(client, message, gamestate)
 		if gamestate.phase == Phase.TEAMVOTE: await teamvote(client, message, gamestate)
 		if gamestate.phase == Phase.PRIVATEVOTE: await privatevote(client, message, gamestate)
+		if gamestate.phase == Phase.LADY: await lady(client, message, gamestate)
 	if gamestate.phase == Phase.GAMEOVER: await gameover(client, message, gamestate)
 
 async def login(client, message, gamestate):
@@ -239,6 +248,7 @@ async def login(client, message, gamestate):
 			gamestate.leader = 0 # leader will be in first seat
 			leader_rotation = randrange(len(gamestate.players))	# leadercounter
 			gamestate.players = gamestate.players[leader_rotation:] + gamestate.players[:leader_rotation]
+			gamestate.lady_players.append(gamestate.players[-1])
 			gamestate.phase = Phase.NIGHT
 		if reply.content == "!stop":
 			await confirm(reply)
@@ -486,8 +496,58 @@ async def privatevote(client, message, gamestate):
 
 		if (gamestate.succeeded_quests == 3 or gamestate.failed_quests == 3):
 			gamestate.phase = Phase.GAMEOVER
+		elif gamestate.enable_lady and (gamestate.completed_quests >= 2 and gamestate.completed_quests <= 4):
+			gamestate.phase = Phase.LADY
 		else:
 			gamestate.phase = Phase.QUEST
+
+async def lady(client, message, gamestate):
+	current_lady = gamestate.lady_players[-1]
+	await message.channel.send(f"{current_lady.user.mention} you have the Lady of the Lake! Type `!lady @PlayerName` to examine a player's loyalty.")
+
+	def ladycheck(msg):
+		if msg.channel != message.channel:
+			return False
+		if msg.content.startswith("!lady") and msg.author == current_lady.user:
+			return True
+		return msg.content == "!stop"
+	while gamestate.phase == Phase.LADY:
+		lady_message = await client.wait_for("message", check=ladycheck)
+		if lady_message.content == "!stop":
+			await confirm(lady_message)
+			await message.channel.send(gamestate.t.stopStr)
+			gamestate.phase = Phase.INIT
+			return
+		if not lady_message.mentions:
+			await deny(lady_message)
+			await message.channel.send("You did not @mention anyone - please @mention one player.")
+			continue
+		if len(lady_message.mentions) > 1:
+			await deny(lady_message)
+			await message.channel.send("You can only examine 1 player.")
+			continue
+		target_user = lady_message.mentions[0]
+		if target_user == current_lady.user:
+			await deny(lady_message)
+			await message.channel.send("You cannot inspect yourself.")
+			continue
+		if target_user in [p.user for p in gamestate.lady_players]:
+			await deny(lady_message)
+			await message.channel.send("You cannot inspect a player who has already used the lady.")
+			continue
+		if not target_user.id in gamestate.players_by_duid:
+			await deny(lady_message)
+			await message.channel.send(f"{target_user.display_name} is not playing!")
+			continue
+		await confirm(lady_message)
+		target_player = gamestate.players_by_duid[target_user.id]
+		if target_player.role.is_good:
+			await current_lady.user.send(f"{target_player.name} is a **loyal knight of Arthur**.")
+		else:
+			await current_lady.user.send(f"{target_player.name} is a **minion of Mordred**.")
+		await message.channel.send(f"I have whispered {target_player.name}'s loyalty to {current_lady.name}.")
+		gamestate.lady_players.append(target_player)
+		gamestate.phase = Phase.QUEST
 
 async def send_after_delay(channel, message):
 	await asyncio.sleep(20)

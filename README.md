@@ -72,10 +72,8 @@ Avalon is a game of hidden loyalty. Players are either Loyal Servants of Arthur 
 - `!party` - Used by the leader to propose a party during the team building phase.
 - `!approve/!reject` - Used to approve or reject a party during the team building phase.
 - `!success/!fail` - Used to succeed or fail a quest during the secret vote phase.
+- `!lady` - Examine a player's loyalty using Lady of the Lake
 - `!assassinate` - Used by the Assassin in the event of a Good victory to assassinate a member of the game. This command does not have any input verification and only allows you **one** try. Ensure that you @tag the correct person!
-
-# Coming Soon
-- Suggest more features in the [Issue tab](https://github.com/ldeluigi/avalon/issues) of GitHub.
 
 # Original Rulebook
 The original game rules can be found at http://upload.snakesandlattes.com/rules/r/ResistanceAvalon.pdf
