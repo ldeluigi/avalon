@@ -1,16 +1,10 @@
 # The Resistance: Avalon - Discord Edition
 *Discord bot built using discord.py library. Original game by Don Eskridge.*
 
-You can host the bot yourself (remember to set the .env var SECRET_TOKEN to your discord bot token),
-or you can add the public instance by clicking on this link:
-
-https://discord.com/api/oauth2/authorize?client_id=699024385498939473&permissions=67632193&scope=bot
-<a href="https://www.statuscake.com" title="Website Uptime Monitoring"><img src="https://app.statuscake.com/button/index.php?Track=K8Ne4neFxb&Days=1&Design=2" /></a>
-
-*Note: permissions listed in the link are all required. Not granting one or more of them could lead to errors.*
+This bot is not hosted. You need to host the bot yourself (remember to set the .env var SECRET_TOKEN to your discord bot token).
 
 # Technical Requirements
-*Only if you wish to download the source code and host your own copy of Avalon*
+*Needed for hosting the bot*
 - Python 3.5
 - pip - https://pip.pypa.io/en/stable/installing
 - discord.py - https://github.com/Rapptz/discord.py  
@@ -49,6 +43,7 @@ Avalon is a game of hidden loyalty. Players are either Loyal Servants of Arthur 
 - Once a mission team is chosen, it votes by secret ballot whether the mission succeeds or fails.
 - Good will always vote for success and are unable to fail, but Evil has the option of voting for success or failure.
 - It usually only takes one traitor to sabotage a quest, but in games of 7 or more the fourth quest will require two fails.
+- (optional) After the 2nd, 3rd, and 4th missions, the player with the Lady of the Lake inspects the loyalty of another player. The lady of the lake then passes to te inspected player.
 - If three quests succeed, Good wins. If three fail, Evil wins.
 - In the event of a Good victory, a character known as the assassin will choose one person to assassinate. If Merlin is correctly identified and assassinated, Evil wins. 
 
