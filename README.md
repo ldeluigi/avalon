@@ -56,15 +56,20 @@ The original game rules can be found at http://upload.snakesandlattes.com/rules/
 
 ## Commands
 
+### In the discord group with the bot
+
 - `!avalon` - Starts the game.
 - `!help` - Direct messages the user a link to this page.
 - `!stop` - End the currently running game.
 - `!join` - Used to join the game during the login phase.
 - `!party` - Used by the leader to propose a party during the team building phase.
+- `!assassinate` - Used by the Assassin in the event of a Good victory to assassinate a member of the game. This command does not have any input verification and only allows you **one** try. Ensure that you @tag the correct person!
+
+### In private to the bot
+
 - `!approve/!reject` - Used to approve or reject a party during the team building phase.
 - `!success/!fail` - Used to succeed or fail a quest during the secret vote phase.
 - `!lady` - Examine a player's loyalty using Lady of the Lake
-- `!assassinate` - Used by the Assassin in the event of a Good victory to assassinate a member of the game. This command does not have any input verification and only allows you **one** try. Ensure that you @tag the correct person!
 
 ## Coming Soon
 
