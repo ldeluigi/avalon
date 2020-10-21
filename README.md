@@ -76,6 +76,7 @@ Avalon is a game of hidden loyalty. Players are either Loyal Servants of Arthur 
 
 # Coming Soon
 - Suggest more features in the [Issue tab](https://github.com/ldeluigi/avalon/issues) of GitHub.
+- Simultaneous messages support (long term milestone)
 
 # Original Rulebook
 The original game rules can be found at http://upload.snakesandlattes.com/rules/r/ResistanceAvalon.pdf
