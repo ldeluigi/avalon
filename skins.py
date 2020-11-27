@@ -14,15 +14,18 @@ from model import Team, Role, Player
 
 IMAGE_DIR = "img"
 
+
 @dataclass(frozen=True)
 class Character:
     """A character representing a role in the game."""
     name: str
     image_path: str
 
+
 @dataclass(frozen=True)
 class PlayerBaseItem:
     path: str
+
 
 @dataclass(frozen=True)
 class PlayerBase:
@@ -32,6 +35,7 @@ class PlayerBase:
     p8: PlayerBaseItem
     p9: PlayerBaseItem
     p10: PlayerBaseItem
+
 
 @dataclass(frozen=True)
 class Skin:
@@ -43,6 +47,9 @@ class Skin:
     evil_servants: List[Character]
     fail_choice: str
     fail_mark: str
+    lady: str
+    lady_evil: str
+    lady_good: str
     logo: str
     loyal_servants: List[Character]
     merlin: Character
@@ -57,10 +64,10 @@ class Skin:
     table: PlayerBase
     font: str
 
-    def get_image(self, path:str):
+    def get_image(self, path: str):
         return IMAGE_DIR + os.path.sep + self.path + os.path.sep + path
 
-    def get_image_file(self, path:str):
+    def get_image_file(self, path: str):
         return discord.File(self.get_image(path))
 
     def assign_characters(self, players: List[Player]):
@@ -97,10 +104,11 @@ class Skin:
             with Image.open(self.get_image(path)) as boardIm:
                 circleWidth = int(boardIm.width / 10)
                 with Image.open(self.get_image(self.reject_mark)) \
-                 .resize((circleWidth, circleWidth)) as attemptIm:
+                        .resize((circleWidth, circleWidth)) as attemptIm:
                     left_times = 5 - gamestate.team_attempts
                     boardIm.alpha_composite(attemptIm, dest=(
-                        int(boardIm.width / 16 + left_times * (boardIm.width / 27 + circleWidth)),
+                        int(boardIm.width / 16 + left_times *
+                            (boardIm.width / 27 + circleWidth)),
                         int(boardIm.height * 9.4 / 12)
                     ))
                     circleWidth = int(boardIm.width / 6.3)
@@ -110,7 +118,7 @@ class Skin:
                             .resize((circleWidth, circleWidth)) as failIm:
                         for quest, index in zip(gamestate.quests, range(0, len(gamestate.quests))):
                             pos = (int(boardIm.width / 27 + index * (boardIm.width / 34 + circleWidth)),
-                             int(boardIm.height / 2.47))
+                                   int(boardIm.height / 2.47))
                             if (quest.winning_team is Team.GOOD):
                                 boardIm.alpha_composite(successIm, dest=pos)
                             if (quest.winning_team is Team.EVIL):
@@ -136,21 +144,24 @@ class Skin:
                 path = self.table.p9.path
             with Image.open(self.get_image(path)) as tableIm:
                 tableImDraw = ImageDraw.Draw(tableIm)
-                tableCenter = (int(tableIm.width / 2.75), int(tableIm.height / 1.83))
+                tableCenter = (int(tableIm.width / 2.75),
+                               int(tableIm.height / 1.83))
                 tableRadius = int(tableIm.width / 3.6)
                 player_list = gamestate.players
                 firstAngle = 2 * math.pi / len(player_list)
                 stepAngle = 2 * math.pi / len(player_list)
                 font = ImageFont.truetype(self.get_image(self.font), size=20)
                 for player, index in zip(player_list, range(0, len(player_list))):
-                    xOffset = tableRadius * math.cos(firstAngle - index * stepAngle)
-                    yOffset = -(tableRadius * math.sin(firstAngle - index * stepAngle))
+                    xOffset = tableRadius * \
+                        math.cos(firstAngle - index * stepAngle)
+                    yOffset = -(tableRadius *
+                                math.sin(firstAngle - index * stepAngle))
                     if (index == gamestate.leader):
                         fillColor = ImageColor.getrgb("yellow")
                     else:
                         fillColor = ImageColor.getrgb("white")
                     tableImDraw.text(xy=(tableCenter[0] + xOffset, tableCenter[1] + yOffset),
-                        text=player.name, fill=fillColor, font=font, align="center")
+                                     text=player.name, fill=fillColor, font=font, align="center")
                 chars_list = list(map(lambda p: p.char, gamestate.players))
                 chars_list.sort(key=lambda char: char.name)
                 char_height = int(tableIm.height / len(chars_list))
@@ -168,11 +179,13 @@ class Skin:
                         with get_resized_image_for_char(char) as charIm:
                             images_width.append(charIm.width)
                     table_offset = max(images_width)
-                    newIm = Image.new("RGBA", (tableIm.width + table_offset, tableIm.height))
+                    newIm = Image.new(
+                        "RGBA", (tableIm.width + table_offset, tableIm.height))
                     newIm.alpha_composite(tableIm, dest=(table_offset, 0))
                     for index, char in enumerate(chars_list):
                         with get_resized_image_for_char(char) as charIm:
-                                newIm.alpha_composite(charIm, dest=(0, index * char_height))
+                            newIm.alpha_composite(
+                                charIm, dest=(0, index * char_height))
                     tableIm = newIm
                 arr = io.BytesIO()
                 tableIm.save(arr, format='PNG')
@@ -180,12 +193,13 @@ class Skin:
                 return discord.File(arr, "table.png")
         await channel.send(file=await get_event_loop().run_in_executor(None, _make_table))
 
-    async def get_votes_file(self, channel, success_votes:int, fail_votes:int):
+    async def get_votes_file(self, channel, success_votes: int, fail_votes: int):
         def _make_votes():
             with Image.open(self.get_image(self.success_choice)) as successIm, \
-                Image.open(self.get_image(self.fail_choice)) as failIm:
+                    Image.open(self.get_image(self.fail_choice)) as failIm:
                 total_votes = success_votes + fail_votes
-                total_width = success_votes * successIm.width + fail_votes * failIm.width + max(0, (10 - total_votes) * successIm.width)
+                total_width = success_votes * successIm.width + fail_votes * \
+                    failIm.width + max(0, (10 - total_votes) * successIm.width)
                 total_height = max(successIm.height, failIm.height)
                 vote_list = [True] * success_votes + [False] * fail_votes
                 random.shuffle(vote_list)
@@ -193,7 +207,8 @@ class Skin:
                 current_width = 0
                 for vote in vote_list:
                     if vote:
-                        newIm.alpha_composite(successIm, dest=(current_width, 0))
+                        newIm.alpha_composite(
+                            successIm, dest=(current_width, 0))
                         current_width += successIm.width
                     else:
                         newIm.alpha_composite(failIm, dest=(current_width, 0))
@@ -206,7 +221,7 @@ class Skin:
 
 
 Skins = dict(
-    AVALON = Skin(
+    AVALON=Skin(
         path="avalon",
         assassin=Character("The Assassin", "assassin.png"),
         background="wood_bg.jpg",
@@ -224,11 +239,15 @@ Skins = dict(
         ],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
+        lady="lady_of_the_lake.png"
+        lady_evil="lady_evil.png",
+        lady_good="lady_good.png",
         logo="logo.png",
         loyal_servants=[
             Character("Galahad, Loyal Servant of Arthur", "loyal_servant.png"),
             Character("Tristan, Loyal Servant of Arthur", "loyal_servant.png"),
-            Character("Guinevere, Loyal Servant of Arthur", "loyal_servant.png"),
+            Character("Guinevere, Loyal Servant of Arthur",
+                      "loyal_servant.png"),
             Character("Lamorak, Loyal Servant of Arthur", "loyal_servant.png"),
         ],
         merlin=Character("Merlin", "merlin.png"),
@@ -250,7 +269,7 @@ Skins = dict(
         ),
         font="medieval.ttf"
     ),
-    STARWARS = Skin(
+    STARWARS=Skin(
         path="starwars",
         assassin=Character("Boba Fett", "boba_fett_assassin.png"),
         background="stars_bg.jpg",
@@ -268,6 +287,9 @@ Skins = dict(
         ],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
+        lady="lady_of_the_lake.png"
+        lady_evil="lady_evil.png",
+        lady_good="lady_good.png",
         logo="logo.png",
         loyal_servants=[
             Character("Rebel", "ally_0.png"),
