@@ -12,3 +12,6 @@ __pycache__/
 
 # Ignore venv
 venv/
+
+#Ignore vscode stuff
+.vscode/*
