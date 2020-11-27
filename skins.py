@@ -239,7 +239,7 @@ Skins = dict(
         ],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
-        lady="lady_of_the_lake.png"
+        lady="lady_of_the_lake.png",
         lady_evil="lady_evil.png",
         lady_good="lady_good.png",
         logo="logo.png",
@@ -287,7 +287,7 @@ Skins = dict(
         ],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
-        lady="lady_of_the_lake.png"
+        lady="lady_of_the_lake.png",
         lady_evil="lady_evil.png",
         lady_good="lady_good.png",
         logo="logo.png",
