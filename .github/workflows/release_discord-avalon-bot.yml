@@ -13,21 +13,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@master
+      - uses: actions/checkout@master
 
-    - name: Set up Python version
-      uses: actions/setup-python@v1
-      with:
-        python-version: '3.8'
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
 
-    - name: Build using AppService-Build
-      uses: azure/appservice-build@v1
-      with:
-        platform: python
+      - name: Build using AppService-Build
+        uses: azure/appservice-build@v2
+        with:
+          platform: python
 
-    - name: 'Deploy to Azure Web App'
-      uses: azure/webapps-deploy@v1
-      with:
-        app-name: 'discord-avalon-bot'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_468bec2bdc91499fbb944b0910eee6b0 }}
+      - name: "Deploy to Azure Web App"
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "discord-avalon-bot"
+          slot-name: "production"
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_468bec2bdc91499fbb944b0910eee6b0 }}
