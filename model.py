@@ -14,7 +14,8 @@ class Phase(Enum):
 	QUEST = 3         # team must be selected by leader
 	TEAMVOTE = 4      # team must be voted by all players
 	PRIVATEVOTE = 5   # quest is ongoing, adventurers must pick success or fail
-	GAMEOVER = 6      # game is over (unstable)
+	LADY = 6          # lady of the lake
+	GAMEOVER = 7      # game is over (unstable)
 
 @dataclass(frozen=True)
 class Role:
