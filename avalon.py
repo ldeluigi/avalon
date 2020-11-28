@@ -43,7 +43,7 @@ NAME_TO_ROLE = {
 @dataclass
 class GameState:
     phase: Phase = Phase.INIT    # current game phase
-    quest_selection = False      # whether leader may choose any incomplete quest
+    quest_selection = True      # whether leader may choose any incomplete quest
     enable_lady = False           # whether lady of the lake is enabled
     quests: List[Quest] = field(default_factory=list)
     players: List[Player] = field(default_factory=list)
@@ -138,14 +138,17 @@ def setup_game(num_players, custom_roles):
             evil_count = 1
 
         good_roles = [
-            role for role in custom_roles if role.is_good][:good_count]
+            role for role in custom_roles if role.is_good
+        ][:good_count]
         while len(good_roles) < good_count:
             good_roles.append(SERVANT)
         evil_roles = [
-            role for role in custom_roles if role.is_evil][:evil_count]
+            role for role in custom_roles if role.is_evil
+        ][:evil_count]
         while len(evil_roles) < evil_count:
             evil_roles.append(MINION)
         roles = good_roles + evil_roles
+
     else:
         if num_players == 1:  # Test scenario
             roles = [ASSASSIN]
@@ -234,10 +237,12 @@ async def login(client, message, gamestate):
                                            (gamestate.t.ladyEnabled if gamestate.enable_lady else gamestate.t.ladyDisabled))
             elif reply.content.startswith('!roles '):
                 custom_role_names = reply.content.split(' ')[1:]
-                custom_role_names = [name.lower()
-                                     for name in custom_role_names if name != '']
+                custom_role_names = [
+                    name.lower() for name in custom_role_names if name != ''
+                ]
                 invalid_role_names = [
-                    name for name in custom_role_names if not name in NAME_TO_ROLE]
+                    name for name in custom_role_names if not name in NAME_TO_ROLE
+                ]
                 if 'lady' in invalid_role_names:
                     invalid_role_names.remove('lady')
                 if len(invalid_role_names) > 0:
@@ -258,8 +263,9 @@ async def login(client, message, gamestate):
                 else:
                     gamestate.enable_lady = False
                     await message.channel.send(gamestate.t.ladyDisabled)
-                custom_roles = [NAME_TO_ROLE[name]
-                                for name in custom_role_names]
+                custom_roles = [
+                    NAME_TO_ROLE[name] for name in custom_role_names
+                ]
                 await message.channel.send(gamestate.t.rolesUpdated)
 
             if reply.content == "!join" and len(gamestate.players) > 10:
@@ -286,11 +292,13 @@ async def login(client, message, gamestate):
                 chars_list = [p.char.name for p in gamestate.players]
                 shuffle(chars_list)
                 roles_str = "\n".join(
-                    ":black_small_square: {}".format(r) for r in chars_list)
+                    ":black_small_square: {}".format(r) for r in chars_list
+                )
                 await message.channel.send(gamestate.t.startStr(players_str, len(gamestate.players), good_count, evil_count, roles_str))
                 gamestate.leader = 0  # leader will be in first seat
                 leader_rotation = randrange(
-                    len(gamestate.players))  # leadercounter
+                    len(gamestate.players)
+                )  # leadercounter
                 gamestate.players = gamestate.players[leader_rotation:] + \
                     gamestate.players[:leader_rotation]
                 gamestate.lady_players.append(gamestate.players[-1])
@@ -305,13 +313,16 @@ async def night(client, message, gamestate):
     await message.channel.send(gamestate.t.nightStr)
     # evil players seen by each other
     evillist = [
-        p for p in gamestate.players if p.role.is_evil and p.role is not OBERON]
+        p for p in gamestate.players if p.role.is_evil and p.role is not OBERON
+    ]
     # evil players seen by Merlin (exclude Mordred)
     merlinlist = [
-        p for p in gamestate.players if p.role.is_evil and p.role is not MORDRED]
+        p for p in gamestate.players if p.role.is_evil and p.role is not MORDRED
+    ]
     # players seen by Percival
     percivallist = [
-        p for p in gamestate.players if p.role in [MERLIN, MORGANA]]
+        p for p in gamestate.players if p.role in [MERLIN, MORGANA]
+    ]
 
     shuffle(evillist)
     shuffle(merlinlist)
@@ -628,19 +639,23 @@ async def gameover(client, message, gamestate):
     await gamestate.skin.send_board(gamestate, message.channel)
     if gamestate.succeeded_quests == 3:
         merlinPlayer = next(
-            filter(lambda p: p.role == MERLIN, gamestate.players), None)
+            filter(lambda p: p.role == MERLIN, gamestate.players), None
+        )
         merlin = None
         if merlinPlayer != None:
             merlin = merlinPlayer.user
 
         assassinPlayer = next(
-            filter(lambda p: p.role == ASSASSIN, gamestate.players), None)
+            filter(lambda p: p.role == ASSASSIN, gamestate.players), None
+        )
         if assassinPlayer == None:
             assassinPlayer = next(
-                filter(lambda p: p.role == MORDRED, gamestate.players), None)
+                filter(lambda p: p.role == MORDRED, gamestate.players), None
+            )
         if assassinPlayer == None:
             assassinPlayer = next(
-                filter(lambda p: p.role.is_evil, gamestate.players), None)
+                filter(lambda p: p.role.is_evil, gamestate.players), None
+            )
         if assassinPlayer == None:
             await message.channel.send(gamestate.t.noMinions)
             await message.channel.send(gamestate.t.stopStr)
@@ -680,19 +695,6 @@ async def gameover(client, message, gamestate):
     await message.channel.send(roles_str)
     await message.channel.send(gamestate.t.stopStr)
     gamestate.phase = Phase.INIT
-
-
-async def addscore(client, message, user):
-    return
-    score = shelve.open('leaderboard', writeback=True)
-    if user.id in score:
-        current = score[user.id]
-        score[user.id] = current + 30
-    else:
-        score[user.id] = 30
-    # await client.send_message(message.channel, str(user.name)+" now has "+str(score[user.id])+" dollarydoos")
-    score.sync()
-    score.close()
 
 
 async def confirm(message):

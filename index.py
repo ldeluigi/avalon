@@ -1,3 +1,6 @@
+# This file mocks a web server to be able to deploy the bot
+# on a free web hosting platform that supports python, such as Azure. #
+
 import os
 from socketserver import ThreadingMixIn
 from http.server import HTTPServer, BaseHTTPRequestHandler
