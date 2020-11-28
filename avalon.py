@@ -28,14 +28,15 @@ MORDRED = Role(Team.EVIL, "mordred")
 OBERON = Role(Team.EVIL, "oberon")
 
 NAME_TO_ROLE = {
-    'servant': SERVANT,
-    'minion': MINION,
-    'merlin': MERLIN,
-    'percival': PERCIVAL,
-    'assassin': ASSASSIN,
-    'morgana': MORGANA,
-    'mordred': MORDRED,
-    'oberon': OBERON,
+    SERVANT.key: SERVANT,
+    MINION.key: MINION,
+    MERLIN.key: MERLIN,
+    PERCIVAL.key: PERCIVAL,
+    ASSASSIN.key: ASSASSIN,
+    MORGANA.key: MORGANA,
+    MORDRED.key: MORDRED,
+    OBERON.key: OBERON,
+    'parsifal': PERCIVAL
 }
 
 
@@ -43,7 +44,7 @@ NAME_TO_ROLE = {
 class GameState:
     phase: Phase = Phase.INIT    # current game phase
     quest_selection = False      # whether leader may choose any incomplete quest
-    enable_lady = True           # whether lady of the lake is enabled
+    enable_lady = False           # whether lady of the lake is enabled
     quests: List[Quest] = field(default_factory=list)
     players: List[Player] = field(default_factory=list)
     players_by_duid: Mapping[int, Player] = field(default_factory=dict)
@@ -228,26 +229,38 @@ async def login(client, message, gamestate):
                 else:
                     await deny(reply)
                     await message.channel.send(gamestate.t.alreadyJoinedStr(reply.author.mention))
-            if reply.content.startswith('!roles '):
+            if (reply.content == '!roles'):
+                await message.channel.send(gamestate.t.selectedRoles(', '.join([x.key for x in custom_roles])) +
+                                           (gamestate.t.ladyEnabled if gamestate.enable_lady else gamestate.t.ladyDisabled))
+            elif reply.content.startswith('!roles '):
                 custom_role_names = reply.content.split(' ')[1:]
                 custom_role_names = [name.lower()
                                      for name in custom_role_names if name != '']
                 invalid_role_names = [
                     name for name in custom_role_names if not name in NAME_TO_ROLE]
+                if 'lady' in invalid_role_names:
+                    invalid_role_names.remove('lady')
                 if len(invalid_role_names) > 0:
                     await error(reply)
-                    await message.channel.send(invalid_role_names[0] + ' is not a valid role.')
+                    await message.channel.send(gamestate.t.roleNotValid(invalid_role_names[0]))
                     continue
 
                 await confirm(reply)
                 if not "merlin" in custom_role_names:
                     custom_role_names.append("merlin")
-                    await message.channel.send("Merlin is a required role and was automatically added.")
+                    await message.channel.send(gamestate.t.merlinRequired)
                 if not "assassin" in custom_role_names:
-                    await message.channel.send("Assassin is not present. Invoking house rules - another evil player will gain the assassin's power.")
+                    await message.channel.send(gamestate.t.noAssassin)
+                if 'lady' in custom_role_names:
+                    custom_role_names.remove('lady')
+                    gamestate.enable_lady = True
+                    await message.channel.send(gamestate.t.ladyEnabled)
+                else:
+                    gamestate.enable_lady = False
+                    await message.channel.send(gamestate.t.ladyDisabled)
                 custom_roles = [NAME_TO_ROLE[name]
                                 for name in custom_role_names]
-                await message.channel.send('Roles updated!')
+                await message.channel.send(gamestate.t.rolesUpdated)
 
             if reply.content == "!join" and len(gamestate.players) > 10:
                 await deny(reply)
@@ -260,7 +273,7 @@ async def login(client, message, gamestate):
                 gamestate.quests, roles_list = setup_game(
                     len(gamestate.players), custom_roles)
                 if roles_list is None:
-                    await message.channel.send("Rule Loading Error!")
+                    await message.channel.send(gamestate.t.ruleLoadingError)
                     continue
                 players_str = ", ".join(p.name for p in gamestate.players)
                 evil_count = sum(r.is_evil for r in roles_list)
@@ -459,7 +472,7 @@ async def teamvote(client, message, gamestate):
                     mentions = ', '.join(
                         [user.mention for user in pending_voters])
                     send_delay_task = asyncio.create_task(send_after_delay(
-                        message.channel, f'Just waiting for {mentions}...'))
+                        message.channel, gamestate.t.waitingFor(mentions)))
 
         # votes have been submitted
         if gamestate.leader == (len(gamestate.players)-1):
@@ -532,7 +545,7 @@ async def privatevote(client, message, gamestate):
                     mentions = ", ".join(
                         [user.mention for user in pending_players])
                     send_delay_task = asyncio.create_task(send_after_delay(
-                        message.channel, f"Just waiting for {mentions}..."))
+                        message.channel, gamestate.t.waitingFor(mentions)))
 
         quest = gamestate.quests[gamestate.current_quest-1]
         if fails >= quest.required_fails:
@@ -557,7 +570,7 @@ async def privatevote(client, message, gamestate):
 async def lady(client, message, gamestate):
     current_lady = gamestate.lady_players[-1]
     await gamestate.skin.send_image(gamestate.skin.lady, message.channel)
-    await message.channel.send(f"{current_lady.user.mention} you have the Lady of the Lake! Type `!lady @PlayerName` to examine a player's loyalty.")
+    await message.channel.send(gamestate.t.ladyInstructions(current_lady.user.mention))
 
     def ladycheck(msg):
         if msg.channel != message.channel:
@@ -574,34 +587,34 @@ async def lady(client, message, gamestate):
             return
         if not lady_message.mentions:
             await deny(lady_message)
-            await message.channel.send("You did not @mention anyone - please @mention one player.")
+            await message.channel.send(gamestate.t.noMentions)
             continue
         if len(lady_message.mentions) > 1:
             await deny(lady_message)
-            await message.channel.send("You can only examine 1 player.")
+            await message.channel.send(gamestate.t.maxOneInspection)
             continue
         target_user = lady_message.mentions[0]
         if target_user == current_lady.user:
             await deny(lady_message)
-            await message.channel.send("You cannot inspect yourself.")
+            await message.channel.send(gamestate.t.noSelfInspect)
             continue
         if target_user in [p.user for p in gamestate.lady_players]:
             await deny(lady_message)
-            await message.channel.send("You cannot inspect a player who has already used the lady.")
+            await message.channel.send(gamestate.t.cantInspectPreviousLady)
             continue
         if not target_user.id in gamestate.players_by_duid:
             await deny(lady_message)
-            await message.channel.send(f"{target_user.display_name} is not playing!")
+            await message.channel.send(gamestate.t.playerNotPlaying(target_user.display_name))
             continue
         await confirm(lady_message)
         target_player = gamestate.players_by_duid[target_user.id]
         if target_player.role.is_good:
             await gamestate.skin.send_image(gamestate.skin.lady_good, current_lady.user)
-            await current_lady.user.send(f"{target_player.name} is a **loyal knight of Arthur**.")
+            await current_lady.user.send(gamestate.t.loyalArthur(target_player.name))
         else:
             await gamestate.skin.send_image(gamestate.skin.lady_evil, current_lady.user)
-            await current_lady.user.send(f"{target_player.name} is a **minion of Mordred**.")
-        await message.channel.send(f"I have whispered {target_player.name}'s loyalty to {current_lady.name}.")
+            await current_lady.user.send(gamestate.t.minionMordred(target_player.name))
+        await message.channel.send(gamestate.t.loyaltyRevealed(target_player.name, current_lady.name))
         gamestate.lady_players.append(target_player)
         gamestate.phase = Phase.QUEST
 
@@ -629,7 +642,7 @@ async def gameover(client, message, gamestate):
             assassinPlayer = next(
                 filter(lambda p: p.role.is_evil, gamestate.players), None)
         if assassinPlayer == None:
-            await message.channel.send("No minions of Mordred are in this game - loyal knights win!")
+            await message.channel.send(gamestate.t.noMinions)
             await message.channel.send(gamestate.t.stopStr)
             gamestate.phase = Phase.INIT
             return
@@ -679,25 +692,6 @@ async def addscore(client, message, user):
         score[user.id] = 30
     # await client.send_message(message.channel, str(user.name)+" now has "+str(score[user.id])+" dollarydoos")
     score.sync()
-    score.close()
-
-
-async def scoreboard(client, message):
-    counter = 0
-    scoreStr = "\n         :star: Top 10 Players :star: \n\n"
-    score = shelve.open('leaderboard')
-    klist = score.keys()
-    scoreboard = {}
-    for key in klist:
-        m = discord.utils.get(message.guild.members, id=key)
-        scoreboard[m.name] = score[key]
-
-    for item in sorted(scoreboard, key=scoreboard.get, reverse=True):
-        if counter < 10:
-            scoreStr += ':military_medal: `{:20}{:>4}`\n'.format(
-                str(item), str(scoreboard[item]))
-            counter = counter + 1
-    await message.channel.send(scoreStr)
     score.close()
 
 
