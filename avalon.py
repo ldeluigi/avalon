@@ -43,7 +43,7 @@ NAME_TO_ROLE = {
 @dataclass
 class GameState:
     phase: Phase = Phase.INIT    # current game phase
-    quest_selection = True      # whether leader may choose any incomplete quest
+    quest_selection = False      # whether leader may choose any incomplete quest
     enable_lady = False           # whether lady of the lake is enabled
     quests: List[Quest] = field(default_factory=list)
     players: List[Player] = field(default_factory=list)
@@ -372,12 +372,12 @@ async def quest(client, message, gamestate):
     if gamestate.quest_selection:
         await gamestate.skin.send_table(gamestate, message.channel)
         await gamestate.skin.send_board(gamestate, message.channel)
-        await message.channel.send(gamestate.t.teamReminderQuestSel)
+        await message.channel.send(gamestate.t.teamReminderQuestSel(gamestate.players[gamestate.leader].user.mention))
     else:
         quest = gamestate.quests[gamestate.current_quest-1]
         await gamestate.skin.send_table(gamestate, message.channel)
         await gamestate.skin.send_board(gamestate, message.channel)
-        await message.channel.send(gamestate.t.teamReminder(quest.adventurers))
+        await message.channel.send(gamestate.t.teamReminder(gamestate.players[gamestate.leader].user.mention, quest.adventurers))
     while gamestate.phase == Phase.QUEST:
         votetrigger = await client.wait_for("message", check=channel_check(message.channel))
         party_ptn = RE_PARTY_QUEST_NAMES if gamestate.quest_selection else RE_PARTY_NAMES
