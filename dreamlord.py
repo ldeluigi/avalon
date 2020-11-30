@@ -40,19 +40,6 @@ async def on_message(message):
             await avalon(client, message)
             busyChannels.remove(message.channel)
 
-    """
-	if message.content.startswith('!word'):
-		if message.channel in busyChannels:
-			await client.send_message(message.channel, "Channel busy with another activity.")
-		else:
-			busyChannels.append(message.channel)
-			await client.send_message(message.channel, "Starting **Guess-the-Word** in `#"+message.channel.name+"`...")
-			await run(client, message)
-			busyChannels.remove(message.channel)
-	"""
-    # if message.content.startswith('!score'):
-    #	await scoreboard(client, message)
-
     if message.content.startswith('!help'):
         # message.channel.send()
         await confirm(message)

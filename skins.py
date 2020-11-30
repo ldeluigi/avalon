@@ -287,9 +287,9 @@ Skins = dict(
         ],
         fail_choice="fail_choose_card.png",
         fail_mark="fail_mark.png",
-        lady="lady_of_the_lake.png",
-        lady_evil="lady_evil.png",
-        lady_good="lady_good.png",
+        lady="lake_yoda.png",
+        lady_evil="evil_faction.png",
+        lady_good="good_faction.png",
         logo="logo.png",
         loyal_servants=[
             Character("Rebel", "ally_0.png"),

@@ -686,12 +686,8 @@ async def gameover(client, message, gamestate):
     else:
         await message.channel.send(gamestate.t.gameoverStr + gamestate.t.evilWinsByFailure)
         winning_team = Team.EVIL
-    for player in gamestate.players:
-        if player.role.team is winning_team:
-            await addscore(client, message, player.user)
     roles_str = "\n".join(gamestate.t.roleReveal(player.name, player.char.name)
                           for player in gamestate.players)
-    #roles_str += "\n**30 frickin' dollarydoos** have been credited to members of the winning team.\n\n"
     await message.channel.send(roles_str)
     await message.channel.send(gamestate.t.stopStr)
     gamestate.phase = Phase.INIT
