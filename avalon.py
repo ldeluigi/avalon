@@ -78,7 +78,12 @@ class GameState:
         return re.compile(r'^' + re.escape(self.prefix) + commandRegex)
 
     def isCommand(self, message: str, command: str, exact=False) -> bool:
-        return message.startswith(self.prefix) and (message[len(self.prefix):] == command or (exact == False and message[len(self.prefix):].startswith(command + ' ')))
+        return message.startswith(self.prefix) and (
+            message[len(self.prefix):] == command or (
+                exact == False and
+                message[len(self.prefix):].startswith(command + ' ')
+            )
+        )
 
 
 RE_PARTY_NAMES = r"party\s+.+"
@@ -241,7 +246,7 @@ async def login(client, message, gamestate):
                     await deny(reply)
                     await message.channel.send(gamestate.t.alreadyJoinedStr(reply.author.mention))
             if gamestate.isCommand(reply.content, 'roles', True):
-                await message.channel.send(gamestate.t.selectedRoles(', '.join([x.key for x in custom_roles])) +
+                await message.channel.send(gamestate.t.selectedRoles(', '.join([x.key for x in custom_roles])) + "\n" +
                                            (gamestate.t.ladyEnabled if gamestate.enable_lady else gamestate.t.ladyDisabled))
             elif gamestate.isCommand(reply.content, 'roles'):
                 custom_role_names = reply.content.split(' ')[1:]
@@ -455,7 +460,7 @@ async def teamvote(client, message, gamestate):
         # wait for votes
         vc = 0
         rejectcounter = 0
-        voteStr = gamestate.t.teamvoteResults
+        voteStr = gamestate.t.teamvoteResults + "\n"
         voters = [p.user for p in gamestate.players]
         pending_voters = [p.user for p in gamestate.players]
         num_voters = len(voters)
@@ -477,13 +482,13 @@ async def teamvote(client, message, gamestate):
                     voteStr += ":black_small_square: "
                     if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
                         voteStr += "🏆 "
-                    voteStr += gamestate.t.votedApprove(author_name)
+                    voteStr += gamestate.t.votedApprove(author_name) + "\n"
                 elif gamestate.isCommand(pmtrigger.content, "reject"):
                     await confirm(pmtrigger)
                     voteStr += ":black_small_square: "
                     if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
                         voteStr += "🏆 "
-                    voteStr += gamestate.t.votedReject(author_name)
+                    voteStr += gamestate.t.votedReject(author_name) + "\n"
                     rejectcounter += 1
                 elif gamestate.isCommand(pmtrigger.content, "stop"):
                     await confirm(pmtrigger)
@@ -506,16 +511,16 @@ async def teamvote(client, message, gamestate):
         if rejectcounter >= (len(gamestate.players) / 2):
             gamestate.team_attempts -= 1
             if gamestate.team_attempts == 0:
-                voteStr += gamestate.t.teamvoteEvilWins
+                voteStr += "\n" + gamestate.t.teamvoteEvilWins
                 await message.channel.send(voteStr)
                 gamestate.phase = Phase.GAMEOVER  # evil win state
             else:
-                voteStr += gamestate.t.teamvoteRejected
+                voteStr += "\n" + gamestate.t.teamvoteRejected
                 await message.channel.send(voteStr)
                 gamestate.phase = Phase.QUEST
         else:
             gamestate.team_attempts = 5  # reset passcount
-            voteStr += gamestate.t.teamvoteAccepted
+            voteStr += "\n" + gamestate.t.teamvoteAccepted
             await message.channel.send(voteStr)
             gamestate.phase = Phase.PRIVATEVOTE
 
@@ -681,7 +686,7 @@ async def gameover(client, message, gamestate):
             elif gamestate.isCommand(msg.content, 'stop'):
                 return True
             return False
-        await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.mention))
+        await message.channel.send(gamestate.t.gameoverStr + "\n" + gamestate.t.assassinatePrompt(assassin.mention))
         ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
         if gamestate.isCommand(ass.content, 'assassinate'):
             await confirm(ass)
@@ -693,10 +698,10 @@ async def gameover(client, message, gamestate):
                 await message.channel.send(gamestate.t.assassinateFailed)
                 winning_team = Team.GOOD
     elif gamestate.failed_quests == 3:
-        await message.channel.send(gamestate.t.gameoverStr + gamestate.t.evilWinsByQuests)
+        await message.channel.send(gamestate.t.gameoverStr + "\n" + gamestate.t.evilWinsByQuests)
         winning_team = Team.EVIL
     else:
-        await message.channel.send(gamestate.t.gameoverStr + gamestate.t.evilWinsByFailure)
+        await message.channel.send(gamestate.t.gameoverStr + "\n" + gamestate.t.evilWinsByFailure)
         winning_team = Team.EVIL
     roles_str = "\n".join(gamestate.t.roleReveal(player.name, player.char.name)
                           for player in gamestate.players)
