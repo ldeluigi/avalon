@@ -12,6 +12,7 @@ from discord.errors import Forbidden
 from traceback import print_exc
 #from wordgame import *
 from dotenv import load_dotenv
+from asyncio import TimeoutError
 load_dotenv()
 
 client = discord.Client()
@@ -69,12 +70,20 @@ async def on_ready():
 
 @client.event
 async def on_error(event, *args, **kwargs):
-    if sys.exc_info()[0] == Forbidden and \
+    info = sys.exc_info()
+    if info[0] == Forbidden and \
             event == "on_message" and \
             isinstance(args[0], Message):
         message = args[0]
         await message.channel.send(
-            "```Error```\nInsufficient permissions, I can't do it. Type `!help` for help."
+            "```Error```\n:no_entry_sign: Insufficient permissions, I can't do it. Type `!help` for help."
+        )
+    elif info[0] == TimeoutError and \
+            event == "on_message" and \
+            isinstance(args[0], Message):
+        message = args[0]
+        await message.channel.send(
+            "```Error```\n:alarm_clock: A timeout occurred. The game was canceled. You were inactive for too long."
         )
     else:
         print_exc()
