@@ -43,7 +43,7 @@ NAME_TO_ROLE = {
 @dataclass
 class GameState:
     phase: Phase = Phase.INIT    # current game phase
-    quest_selection = False      # whether leader may choose any incomplete quest
+    quest_selection = True      # whether leader may choose any incomplete quest
     enable_lady = False           # whether lady of the lake is enabled
     quests: List[Quest] = field(default_factory=list)
     players: List[Player] = field(default_factory=list)
@@ -56,7 +56,8 @@ class GameState:
     # past and current lady of the lake
     lady_players: List[Player] = field(default_factory=list)
     skin: Skin = Skins["AVALON"]
-    t: StringSet = StringSets["avalon-en-base"]
+    prefix: str = "!"
+    t: StringSet = StringSets["avalon-en-base"].withDefaults(prefix=prefix)
     @property
     def succeeded_quests(self):
         return sum(quest.winning_team is Team.GOOD for quest in self.quests)
@@ -73,9 +74,15 @@ class GameState:
     def current_lady(self):
         return self.lady_players[-1]
 
+    def compileCommand(self, commandRegex):
+        return re.compile(r'^' + re.escape(self.prefix) + commandRegex)
 
-RE_PARTY_NAMES = re.compile(r"!party\s+.+")
-RE_PARTY_QUEST_NAMES = re.compile(r"!party\s+(\d+)\s+.+")
+    def isCommand(self, message: str, command: str, exact=False) -> bool:
+        return message.startswith(self.prefix) and (message[len(self.prefix):] == command or (exact == False and message[len(self.prefix):].startswith(command + ' ')))
+
+
+RE_PARTY_NAMES = r"party\s+.+"
+RE_PARTY_QUEST_NAMES = r"party\s+(\d+)\s+.+"
 
 
 def channel_check(channel):
@@ -177,7 +184,7 @@ def setup_game(num_players, custom_roles):
     return quests, roles
 
 
-def detect_configuration(command_text: str):
+def detect_configuration(command_text: str, prefix: str):
     command = command_text.lower() + " "
     skin, strings = Skins["AVALON"], StringSets["avalon-en-base"]
     if any(f' {x} ' in command for x in ["sw", "starwars", "star wars"]):
@@ -188,12 +195,13 @@ def detect_configuration(command_text: str):
         skin = Skins["STARWARS"]
     elif any(f' {x} ' in command for x in ["it", "ita", "italian", "italiano"]):
         strings = StringSets["avalon-it-base"]
-    return skin, strings
+    return skin, strings.withDefaults(prefix=prefix)
 
 
-async def avalon(client, message):  # main loop
-    gamestate = GameState()
-    gamestate.skin, gamestate.t = detect_configuration(message.content)
+async def avalon(client, message, prefix):  # main loop
+    gamestate = GameState(prefix=prefix)
+    gamestate.skin, gamestate.t = detect_configuration(
+        message.content, gamestate.prefix)
     await gamestate.skin.send_image(gamestate.skin.logo, message.channel)
     if gamestate.phase == Phase.INIT:
         await login(client, message, gamestate)
@@ -215,12 +223,12 @@ async def avalon(client, message):  # main loop
 async def login(client, message, gamestate):
     # Login Phase
     gamestate.phase = Phase.LOGIN
-    await message.channel.send(gamestate.t.loginStr)
+    await message.channel.send(gamestate.t.loginStr())
     custom_roles = []
     with MsgQueue(client=client, check=channel_check(message.channel)) as msgqueue:
         while gamestate.phase == Phase.LOGIN:
             reply = await msgqueue.nextmsg()
-            if reply.content == "!join" and len(gamestate.players) <= 10:
+            if gamestate.isCommand(reply.content, "join") and len(gamestate.players) <= 10:
                 if not any(p.user.id == reply.author.id for p in gamestate.players):
                     await confirm(reply)
                     await message.channel.send(gamestate.t.joinStr(reply.author.mention))
@@ -228,14 +236,14 @@ async def login(client, message, gamestate):
                     gamestate.players.append(player)
                     gamestate.players_by_duid[reply.author.id] = player
                     if len(gamestate.players) == 5:
-                        await message.channel.send(gamestate.t.fiveStr(reply.author.mention))
+                        await message.channel.send(gamestate.t.fiveStr())
                 else:
                     await deny(reply)
                     await message.channel.send(gamestate.t.alreadyJoinedStr(reply.author.mention))
-            if (reply.content == '!roles'):
+            if gamestate.isCommand(reply.content, 'roles', True):
                 await message.channel.send(gamestate.t.selectedRoles(', '.join([x.key for x in custom_roles])) +
                                            (gamestate.t.ladyEnabled if gamestate.enable_lady else gamestate.t.ladyDisabled))
-            elif reply.content.startswith('!roles '):
+            elif gamestate.isCommand(reply.content, 'roles'):
                 custom_role_names = reply.content.split(' ')[1:]
                 custom_role_names = [
                     name.lower() for name in custom_role_names if name != ''
@@ -268,13 +276,13 @@ async def login(client, message, gamestate):
                 ]
                 await message.channel.send(gamestate.t.rolesUpdated)
 
-            if reply.content == "!join" and len(gamestate.players) > 10:
+            if gamestate.isCommand(reply.content, "join") and len(gamestate.players) > 10:
                 await deny(reply)
-                await message.channel.send(gamestate.t.gameFullStr)
-            if reply.content == "!start" and len(gamestate.players) < 5:
+                await message.channel.send(gamestate.t.gameFullStr())
+            if gamestate.isCommand(reply.content, "start") and len(gamestate.players) < 5:
                 await deny(reply)
                 await message.channel.send(gamestate.t.notEnoughPlayers)
-            if (reply.content == "!start" and len(gamestate.players) >= 5) or reply.content == "!teststart":
+            if (gamestate.isCommand(reply.content, "start") and len(gamestate.players) >= 5) or gamestate.isCommand(reply.content, "teststart"):
                 await confirm(reply)
                 gamestate.quests, roles_list = setup_game(
                     len(gamestate.players), custom_roles)
@@ -303,9 +311,9 @@ async def login(client, message, gamestate):
                     gamestate.players[:leader_rotation]
                 gamestate.lady_players.append(gamestate.players[-1])
                 gamestate.phase = Phase.NIGHT
-            if reply.content == "!stop":
+            if gamestate.isCommand(reply.content, "stop"):
                 await confirm(reply)
-                await message.channel.send(gamestate.t.stopStr)
+                await message.channel.send(gamestate.t.stopStr())
                 gamestate.phase = Phase.INIT
 
 
@@ -380,7 +388,11 @@ async def quest(client, message, gamestate):
         await message.channel.send(gamestate.t.teamReminder(gamestate.players[gamestate.leader].user.mention, quest.adventurers))
     while gamestate.phase == Phase.QUEST:
         votetrigger = await client.wait_for("message", check=channel_check(message.channel))
-        party_ptn = RE_PARTY_QUEST_NAMES if gamestate.quest_selection else RE_PARTY_NAMES
+        party_ptn = gamestate.compileCommand(
+            RE_PARTY_QUEST_NAMES
+        ) if gamestate.quest_selection else gamestate.compileCommand(
+            RE_PARTY_NAMES
+        )
         party_match = party_ptn.fullmatch(votetrigger.content)
         if party_match and votetrigger.author == gamestate.players[gamestate.leader].user:
             if gamestate.quest_selection:
@@ -418,11 +430,11 @@ async def quest(client, message, gamestate):
                     await error(votetrigger)
                     await message.channel.send(gamestate.t.malformedStr(quest.adventurers))
                 # gamestate.phase = Phase.TEAMVOTE #cheatcode
-        elif votetrigger.content.startswith("!stop"):
+        elif gamestate.isCommand(votetrigger.content, "stop"):
             await confirm(votetrigger)
-            await message.channel.send(gamestate.t.stopStr)
+            await message.channel.send(gamestate.t.stopStr())
             gamestate.phase = Phase.INIT
-        elif votetrigger.author == gamestate.players[gamestate.leader].user and votetrigger.content.startswith("!party"):
+        elif votetrigger.author == gamestate.players[gamestate.leader].user and gamestate.isCommand(votetrigger.content, "party"):
             await error(votetrigger)
             await message.channel.send(gamestate.t.malformedQuestSel(len(gamestate.quests)))
 
@@ -433,9 +445,9 @@ async def teamvote(client, message, gamestate):
     def votecheck(msg):
         if isinstance(msg.channel, DMChannel):
             if msg.author in voters:
-                if msg.content == "!approve" or msg.content == "!reject":
+                if gamestate.isCommand(msg.content, "approve") or gamestate.isCommand(msg.content, "reject"):
                     return True
-        elif msg.content == '!stop':
+        elif gamestate.isCommand(msg.content, 'stop'):
             return True
         return False
 
@@ -449,7 +461,7 @@ async def teamvote(client, message, gamestate):
         num_voters = len(voters)
         # del voters[leader]   # enable to exclude leader from voting
         for voter in voters:
-            await voter.send(gamestate.t.privateVoteInfo(gamestate.t.leaderInvocation(gamestate.players[gamestate.leader].name), "!approve", "!reject"))
+            await voter.send(gamestate.t.privateVoteInfo(gamestate.t.leaderInvocation(gamestate.players[gamestate.leader].name), gamestate.prefix + "approve", gamestate.prefix + "reject"))
         send_delay_task = None
         with MsgQueue(client=client, check=votecheck) as msgqueue:
             while pending_voters:
@@ -460,22 +472,22 @@ async def teamvote(client, message, gamestate):
                 if send_delay_task != None:
                     send_delay_task.cancel()
                 author_name = gamestate.players_by_duid[pmtrigger.author.id].name
-                if pmtrigger.content == "!approve":
+                if gamestate.isCommand(pmtrigger.content, "approve"):
                     await confirm(pmtrigger)
                     voteStr += ":black_small_square: "
                     if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
                         voteStr += "🏆 "
                     voteStr += gamestate.t.votedApprove(author_name)
-                elif pmtrigger.content == "!reject":
+                elif gamestate.isCommand(pmtrigger.content, "reject"):
                     await confirm(pmtrigger)
                     voteStr += ":black_small_square: "
                     if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
                         voteStr += "🏆 "
                     voteStr += gamestate.t.votedReject(author_name)
                     rejectcounter += 1
-                elif pmtrigger.content == "!stop":
+                elif gamestate.isCommand(pmtrigger.content, "stop"):
                     await confirm(pmtrigger)
-                    await message.channel.send(gamestate.t.stopStr)
+                    await message.channel.send(gamestate.t.stopStr())
                     gamestate.phase = Phase.INIT
                     return
                 await message.channel.send(gamestate.t.teamvoteCount(author_name, vc, num_voters))
@@ -513,12 +525,12 @@ async def privatevote(client, message, gamestate):
         def privatevotecheck(msg):
             if isinstance(msg.channel, DMChannel):
                 if msg.author in activeplayers and gamestate.players_by_duid[msg.author.id].role.is_evil:
-                    if msg.content == "!success" or msg.content == "!fail":
+                    if gamestate.isCommand(msg.content, "success") or gamestate.isCommand(msg.content, "fail"):
                         return True
                 elif msg.author in activeplayers:
-                    if msg.content == "!success":
+                    if gamestate.isCommand(msg.content, "success"):
                         return True
-            elif msg.content == '!stop':
+            elif gamestate.isCommand(msg.content, 'stop'):
                 return True
             return False
         fails = 0
@@ -530,7 +542,7 @@ async def privatevote(client, message, gamestate):
 
         votecount = len(activeplayers)
         for voter in activeplayers:
-            await voter.send(gamestate.t.privateVoteInfo(gamestate.t.quest, "!success", "!fail"))
+            await voter.send(gamestate.t.privateVoteInfo(gamestate.t.quest, gamestate.prefix + "success", gamestate.prefix + "fail"))
         send_delay_task = None
         with MsgQueue(client=client, check=privatevotecheck) as msgqueue:
             while pending_players:
@@ -538,16 +550,16 @@ async def privatevote(client, message, gamestate):
                 if send_delay_task != None:
                     send_delay_task.cancel()
                 pending_players.remove(pmtrigger.author)
-                if pmtrigger.content == "!success":
+                if gamestate.isCommand(pmtrigger.content, "success"):
                     await confirm(pmtrigger)
                     await gamestate.skin.send_image(gamestate.skin.success_choice, pmtrigger.channel)
-                elif pmtrigger.content == "!fail":
+                elif gamestate.isCommand(pmtrigger.content, "fail"):
                     await confirm(pmtrigger)
                     await gamestate.skin.send_image(gamestate.skin.fail_choice, pmtrigger.channel)
                     fails += 1
-                if pmtrigger.content == "!stop":
+                if gamestate.isCommand(pmtrigger.content, "stop"):
                     await confirm(pmtrigger)
-                    await message.channel.send(gamestate.t.stopStr)
+                    await message.channel.send(gamestate.t.stopStr())
                     gamestate.phase = Phase.INIT
                     return
                 author_name = gamestate.players_by_duid[pmtrigger.author.id].name
@@ -586,14 +598,14 @@ async def lady(client, message, gamestate):
     def ladycheck(msg):
         if msg.channel != message.channel:
             return False
-        if msg.content.startswith("!lady") and msg.author == current_lady.user:
+        if gamestate.isCommand(msg.content, "lady") and msg.author == current_lady.user:
             return True
         return msg.content == "!stop"
     while gamestate.phase == Phase.LADY:
         lady_message = await client.wait_for("message", check=ladycheck)
-        if lady_message.content == "!stop":
+        if gamestate.isCommand(lady_message.content, "stop"):
             await confirm(lady_message)
-            await message.channel.send(gamestate.t.stopStr)
+            await message.channel.send(gamestate.t.stopStr())
             gamestate.phase = Phase.INIT
             return
         if not lady_message.mentions:
@@ -658,20 +670,20 @@ async def gameover(client, message, gamestate):
             )
         if assassinPlayer == None:
             await message.channel.send(gamestate.t.noMinions)
-            await message.channel.send(gamestate.t.stopStr)
+            await message.channel.send(gamestate.t.stopStr())
             gamestate.phase = Phase.INIT
             return
         assassin = assassinPlayer.user
 
         def assassincheck(msg):
-            if msg.content.startswith('!assassinate') and msg.author == assassin and len(msg.mentions) == 1:
+            if gamestate.isCommand(msg.content, 'assassinate') and msg.author == assassin and len(msg.mentions) == 1:
                 return True
-            elif msg.content == '!stop':
+            elif gamestate.isCommand(msg.content, 'stop'):
                 return True
             return False
         await message.channel.send(gamestate.t.gameoverStr + gamestate.t.assassinatePrompt(assassin.mention))
         ass = await client.wait_for("message", check=add_channel_check(assassincheck, message.channel))
-        if ass.content.startswith('!assassinate'):
+        if gamestate.isCommand(ass.content, 'assassinate'):
             await confirm(ass)
             killedID = ass.mentions[0].id
             if merlin != None and merlin.id == killedID:
@@ -689,7 +701,7 @@ async def gameover(client, message, gamestate):
     roles_str = "\n".join(gamestate.t.roleReveal(player.name, player.char.name)
                           for player in gamestate.players)
     await message.channel.send(roles_str)
-    await message.channel.send(gamestate.t.stopStr)
+    await message.channel.send(gamestate.t.stopStr())
     gamestate.phase = Phase.INIT
 
 

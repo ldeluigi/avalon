@@ -16,8 +16,10 @@ load_dotenv()
 
 client = discord.Client()
 busyChannels = []
-game = discord.Game(name="github.com/ldeluigi/avalon",
-                    url="github.com/ldeluigi/avalon")
+prefix = os.getenv("BOT_PREFIX", "!")
+game_string = "The Resistance - Avalon. Type " + \
+    prefix + "help or " + prefix + "start to begin."
+game = discord.Game(name=game_string)
 
 
 @client.event
@@ -25,22 +27,33 @@ async def on_message(message):
     if message.author == client.user:			# we do not want the bot to reply to itself
         return
 
-    if message.content.startswith('!hello'):
+    # non-prefixed commands
+    if len(message.mentions) == 1 and client.user in message.mentions and re.match(r"^<[@!]{1,2}[\d]+>$", message.content):
+        await confirm(message)
+        await message.channel.send('\nMy prefix is currently `' + prefix + '`')
+
+    if not message.content.startswith(prefix):
+        return
+
+    command = message.content[len(prefix):]
+
+    # prefixed commands
+    if command.startswith('hello'):
         await confirm(message)
         msg = 'Greetings {0.author.mention}'.format(message)
         await message.channel.send(msg)
 
-    if message.content.startswith('!avalon'):
+    if command.startswith('avalon'):
         if message.channel in busyChannels:
             await message.channel.send("Channel busy with another activity.")
         elif not isinstance(message.channel, DMChannel):
             await confirm(message)
             busyChannels.append(message.channel)
             await message.channel.send("Starting **The Resistance: Avalon - Discord Edition** in `#"+message.channel.name+"`...")
-            await avalon(client, message)
+            await avalon(client, message, prefix)
             busyChannels.remove(message.channel)
 
-    if message.content.startswith('!help'):
+    if command.startswith('help'):
         # message.channel.send()
         await confirm(message)
         await message.author.send('Please visit https://github.com/ldeluigi/avalon to find out more.')
