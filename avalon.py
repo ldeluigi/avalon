@@ -479,15 +479,15 @@ async def teamvote(client, message, gamestate):
                 author_name = gamestate.players_by_duid[pmtrigger.author.id].name
                 if gamestate.isCommand(pmtrigger.content, "approve"):
                     await confirm(pmtrigger)
-                    voteStr += ":black_small_square: "
+                    voteStr += ":white_medium_square: "
                     if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
-                        voteStr += "🏆 "
+                        voteStr += ":shield: "
                     voteStr += gamestate.t.votedApprove(author_name) + "\n"
                 elif gamestate.isCommand(pmtrigger.content, "reject"):
                     await confirm(pmtrigger)
-                    voteStr += ":black_small_square: "
+                    voteStr += ":black_medium_square: "
                     if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
-                        voteStr += "🏆 "
+                        voteStr += ":shield: "
                     voteStr += gamestate.t.votedReject(author_name) + "\n"
                     rejectcounter += 1
                 elif gamestate.isCommand(pmtrigger.content, "stop"):
