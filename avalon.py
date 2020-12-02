@@ -474,33 +474,33 @@ async def teamvote(client, message, gamestate):
                 if pmtrigger.author in pending_voters:
                     vc += 1
                     pending_voters.remove(pmtrigger.author)
-                if send_delay_task != None:
-                    send_delay_task.cancel()
-                author_name = gamestate.players_by_duid[pmtrigger.author.id].name
-                if gamestate.isCommand(pmtrigger.content, "approve"):
-                    await confirm(pmtrigger)
-                    voteStr += ":white_medium_square: "
-                    if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
-                        voteStr += ":shield: "
-                    voteStr += gamestate.t.votedApprove(author_name) + "\n"
-                elif gamestate.isCommand(pmtrigger.content, "reject"):
-                    await confirm(pmtrigger)
-                    voteStr += ":black_medium_square: "
-                    if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
-                        voteStr += ":shield: "
-                    voteStr += gamestate.t.votedReject(author_name) + "\n"
-                    rejectcounter += 1
-                elif gamestate.isCommand(pmtrigger.content, "stop"):
-                    await confirm(pmtrigger)
-                    await message.channel.send(gamestate.t.stopStr())
-                    gamestate.phase = Phase.INIT
-                    return
-                await message.channel.send(gamestate.t.teamvoteCount(author_name, vc, num_voters))
-                if len(pending_voters) > 0:
-                    mentions = ', '.join(
-                        [user.mention for user in pending_voters])
-                    send_delay_task = asyncio.create_task(send_after_delay(
-                        message.channel, gamestate.t.waitingFor(mentions)))
+                    if send_delay_task != None:
+                        send_delay_task.cancel()
+                    author_name = gamestate.players_by_duid[pmtrigger.author.id].name
+                    if gamestate.isCommand(pmtrigger.content, "approve"):
+                        await confirm(pmtrigger)
+                        voteStr += ":white_medium_square: "
+                        if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
+                            voteStr += ":shield: "
+                        voteStr += gamestate.t.votedApprove(author_name) + "\n"
+                    elif gamestate.isCommand(pmtrigger.content, "reject"):
+                        await confirm(pmtrigger)
+                        voteStr += ":black_medium_square: "
+                        if any(p.user.id == pmtrigger.author.id for p in gamestate.current_party):
+                            voteStr += ":shield: "
+                        voteStr += gamestate.t.votedReject(author_name) + "\n"
+                        rejectcounter += 1
+                    elif gamestate.isCommand(pmtrigger.content, "stop"):
+                        await confirm(pmtrigger)
+                        await message.channel.send(gamestate.t.stopStr())
+                        gamestate.phase = Phase.INIT
+                        return
+                    await message.channel.send(gamestate.t.teamvoteCount(author_name, vc, num_voters))
+                    if len(pending_voters) > 0:
+                        mentions = ', '.join(
+                            [user.mention for user in pending_voters])
+                        send_delay_task = asyncio.create_task(send_after_delay(
+                            message.channel, gamestate.t.waitingFor(mentions)))
 
         # votes have been submitted
         if gamestate.leader == (len(gamestate.players)-1):
