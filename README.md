@@ -58,7 +58,7 @@ The original game rules can be found at http://upload.snakesandlattes.com/rules/
 
 ### In the discord group with the bot
 
-- `!avalon` - Starts the game.
+- `!avalon` - Starts the game. *You can select aspect/skin of the game and language by passing arguments to this command. See [the list](#game-custom-settings).*
 - `!help` - Direct messages the user a link to this page.
 - `!stop` - End the currently running game.
 - `!join` - Used to join the game during the login phase.
@@ -70,6 +70,20 @@ The original game rules can be found at http://upload.snakesandlattes.com/rules/
 
 - `!approve/!reject` - Used to approve or reject a party during the team building phase.
 - `!success/!fail` - Used to succeed or fail a quest during the secret vote phase.
+
+### Custom game settings
+
+#### Custom aspect and language
+
+When you run `!avalon` you can pass special arguments that will be interpreted in order to select a language (between available translations) and a custom skin (that is a different set of role names, images and lore setting).  
+Examples:
+- `it`,`ita`,`italian` set language to italian;
+- `sw`,`star wars`, set skin to Star Wars and language to english;
+- `gs`,`guerre stellari`, set language to italian and skin to Star Wars (in italian "Guerre Stellari");
+
+#### Custom Roles
+
+During the join/login phase, players can set the role list by typing `!roles [roles-list]`, where roles-list is a list of roles separated by a space. With this command the lady of the lake can be enabled, by adding 'lady' to the roles list (even though she is not an actual player role).
 
 ## Coming Soon
 
