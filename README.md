@@ -58,7 +58,8 @@ The original game rules can be found at http://upload.snakesandlattes.com/rules/
 
 ### In the discord group with the bot
 
-- `!avalon` - Starts the game. *You can select aspect/skin of the game and language by passing arguments to this command. See [the list](#game-custom-settings).*
+- `!avalon` - Starts the game.  
+  *You can select aspect/skin of the game and language by passing arguments to this command. See [the list](#custom-game-settings).*
 - `!help` - Direct messages the user a link to this page.
 - `!stop` - End the currently running game.
 - `!join` - Used to join the game during the login phase.
