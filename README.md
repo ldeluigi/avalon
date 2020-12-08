@@ -79,8 +79,8 @@ The original game rules can be found at http://upload.snakesandlattes.com/rules/
 When you run `!avalon` you can pass special arguments that will be interpreted in order to select a language (between available translations) and a custom skin (that is a different set of role names, images and lore setting).  
 Examples:
 - `it`,`ita`,`italian` set language to italian;
-- `sw`,`star wars`, set skin to Star Wars and language to english;
-- `gs`,`guerre stellari`, set language to italian and skin to Star Wars (in italian "Guerre Stellari");
+- `sw`,`star wars` set skin to Star Wars and language to english;
+- `gs`,`guerre stellari` set language to italian and skin to Star Wars (in italian "Guerre Stellari");
 
 #### Custom Roles
 
