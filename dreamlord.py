@@ -57,7 +57,7 @@ async def on_message(message):
     if command.startswith('help'):
         # message.channel.send()
         await confirm(message)
-        await message.author.send('Please visit https://github.com/ldeluigi/avalon to find out more.')
+        await message.author.send('Please visit https://github.com/ldeluigi/avalon/blob/master/README.md to find out more.')
 
 
 @client.event
