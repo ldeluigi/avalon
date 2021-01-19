@@ -1,8 +1,10 @@
-name: Scheduled Dependencies Update Check
+name: Cross-Platform Build & Check Dependencies
 on: 
   schedule:
     - cron: "0 8 1 * *"
-  workflow_dispatch:
+  push:
+    branches: "*"
+  pull_request:
 
 jobs:
   build:
