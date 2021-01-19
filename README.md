@@ -90,11 +90,13 @@ During the join/login phase, players can set the role list by typing `!roles [ro
 
 - Suggest more features in the [Issue tab](https://github.com/ldeluigi/avalon/issues) of GitHub.
 
-# Technical Requirements
+# Technical Stuff
+
+## Requirements
 
 _Only if you wish to download the source code and host your own copy of Avalon_
 
-- Python 3.5
+- Python 3.8
 - pip - https://pip.pypa.io/en/stable/installing
 - discord.py - https://github.com/Rapptz/discord.py  
   `pip install -U discord.py`
@@ -114,3 +116,11 @@ _Only if you wish to download the source code and host your own copy of Avalon_
    Where `token` is your discord bot token. ([Learn more](https://discord.com/developers/docs/topics/oauth2))
 1. Run the start command:  
    `python dreamlord.py`
+
+## CI/CD Status Badges
+
+Continuous Integration:  
+![Cross-Platform Build & Check Dependencies](https://github.com/ldeluigi/avalon/workflows/Cross-Platform%20Build%20&%20Check%20Dependencies/badge.svg)
+
+Continuous Deployment:  
+![Build and deploy Python app to Azure Web App - discord-avalon-bot](https://github.com/ldeluigi/avalon/workflows/Build%20and%20deploy%20Python%20app%20to%20Azure%20Web%20App%20-%20discord-avalon-bot/badge.svg?branch=release)
