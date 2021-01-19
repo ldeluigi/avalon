@@ -107,7 +107,7 @@ _Only if you wish to download the source code and host your own copy of Avalon_
 
 **Alternatively, you can simply run** `pip install -r requirements.txt`
 
-# Run instructions
+## Run instructions
 
 1. Download dependencies  
    _Note: make sure python version meets requirements._
