@@ -40,6 +40,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Build using AppService-Build
+        if: startsWith(runner.os, 'ubuntu')
         uses: azure/appservice-build@v2
         with:
           platform: python
